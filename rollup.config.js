@@ -1,5 +1,16 @@
 /*
- * Author: Ben Brenkman
+ * Copyright 2019 Google LLC. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 const { nodeResolve: resolve } = require("@rollup/plugin-node-resolve");
@@ -23,16 +34,16 @@ let plugins = [
   replace({ "Reflect.decorate": "undefined" }),
 ];
 
-const watchFiles = ["lib/**", "../3dom/lib/**"];
+const watchFiles = ["lib/**"];
 
 const outputOptions = [
   {
-    input: "./src/hbll-model-viewer.ts",
+    input: "./lib/hbll-model-viewer.js",
     output: {
       file: "./dist/hbll-model-viewer.js",
       sourcemap: true,
       format: "esm",
-      name: "ModelViewerElement",
+      name: "HbllModelViewerElement",
     },
     watch: {
       include: watchFiles,
@@ -58,12 +69,12 @@ if (NODE_ENV !== "development") {
   // IE11 does not support modules, so they are removed here, as well as in a
   // dedicated unit test build which is needed for the same reason.
   outputOptions.push({
-    input: "./src/hbll-model-viewer.ts",
+    input: "./lib/hbll-model-viewer.js",
     output: {
       file: "./dist/hbll-model-viewer-umd.js",
       sourcemap: true,
       format: "umd",
-      name: "ModelViewerElement",
+      name: "HbllModelViewerElement",
     },
     watch: {
       include: watchFiles,
@@ -80,7 +91,7 @@ if (NODE_ENV !== "development") {
       file: "./dist/hbll-model-viewer.min.js",
       sourcemap: true,
       format: "esm",
-      name: "ModelViewerElement",
+      name: "HbllModelViewerElement",
     },
     watch: {
       include: watchFiles,

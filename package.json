@@ -1,14 +1,15 @@
 {
-  "name": "hbll-model-viewer-library",
+  "name": "hbll-model-viewer",
   "version": "1.0.0",
   "description": "Web component for the HBLL model viewer",
-  "main": "index.js",
+  "main": "dist/hbll-model-viewer-umd.js",
+  "module": "dist/hbll-model-viewer.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npm run build:rollup",
+    "build": "npm run build:tsc && npm run build:rollup",
     "build:rollup": "rollup -c --environment NODE_ENV:production",
     "build:tsc": "tsc --incremental",
-    "serve": "http-server -a 127.0.0.1 -c-1 /exmaple"
+    "serve": "http-server ."
   },
   "repository": {
     "type": "git",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@google/model-viewer": "^1.3.0",
     "http-server": "^0.12.3",
+    "lit-element": "^2.4.0",
     "typescript": "^4.0.5"
   },
   "devDependencies": {
@@ -43,6 +45,7 @@
     "webvr",
     "webxr",
     "model-viewer",
-    "3d"
+    "3d",
+    "hbll"
   ]
 }
