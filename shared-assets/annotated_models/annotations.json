@@ -1,0 +1,80 @@
+{
+  "default_color": "#FFFFFFFF",
+  "ordered": true,
+  "annotations": [
+    {
+      "name": "skull_1",
+      "description": "This is a sample",
+      "fill_color": "#fce303",
+      "border_color": "",
+      "border_thickness": 1,
+      "vanish": true,
+      "position": {
+        "x": 0.051448423807264776,
+        "y": 0.3115825443530399,
+        "z": 0.3886195675971975
+      },
+      "normal": {
+        "x": 0.48447819696849925,
+        "y": 0.33822433768327737,
+        "z": 0.8067745497106739
+      }
+    },
+    {
+      "name": "skull_2",
+      "description": "This is another annotation",
+      "position": {
+        "x": 0.14531843499324482,
+        "y": 0.5627061118534998,
+        "z": 0.14128698642958404
+      },
+      "normal": {
+        "x": 0.5050816677082409,
+        "y": 0.7912744408032175,
+        "z": 0.3446407815053488
+      }
+    },
+    {
+      "name": "skull_3",
+      "description": "This is a skull with some very nice looking bones",
+      "position": {
+        "x": 0.41861986778266336,
+        "y": 0.4371212985821251,
+        "z": -0.4126996248833883
+      },
+      "normal": {
+        "x": 0.5478267499359907,
+        "y": 0.7095786276186742,
+        "z": -0.4431523702761484
+      }
+    },
+    {
+      "name": "skull_4",
+      "description": "Yet another annotion",
+      "position": {
+        "x": -0.42131098943476464,
+        "y": -0.47967868695991056,
+        "z": -0.01609966476308472
+      },
+      "normal": {
+        "x": -0.09527233403744777,
+        "y": -0.9928468758228154,
+        "z": 0.07196015241737684
+      }
+    },
+    {
+      "name": "skull_5",
+      "description": "An annotation with a different color",
+      "position": {
+        "x": -0.9018575173601049,
+        "y": -0.10467231500223007,
+        "z": 0.14438518893005736
+      },
+      "normal": {
+        "x": -0.9896933760030359,
+        "y": 0.026960194947620773,
+        "z": 0.14064199011710515
+      }
+    }
+  ]
+}

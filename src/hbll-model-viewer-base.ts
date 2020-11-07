@@ -1,5 +1,6 @@
 import { html, LitElement, property, css, query } from "lit-element";
 import { urlFromUnzippedFile, jsonFromFile } from "./file-utils.js";
+import { AnnotationData, Annotation } from "./types/annotations.js";
 
 const map_style = {
   height: "100vh",
@@ -11,15 +12,16 @@ export default class HbllModelViewerElementBase extends LitElement {
   @query("a") readonly downloader?: any;
   @property({ type: String }) src: string | null = null;
   @property({ type: String }) skybox_image: string | null = null;
-  @property() annotations: any | null = null;
+  @property() annotations: AnnotationData | null = null;
 
   cameraIsDirty: boolean;
-  hotspots: any[];
+  currentAnnotation: Annotation | undefined;
+  buttonStyles: any;
 
   constructor() {
     super();
     this.cameraIsDirty = false;
-    this.hotspots = [];
+    this.currentAnnotation = undefined;
   }
 
   async firstUpdated() {
@@ -53,6 +55,8 @@ export default class HbllModelViewerElementBase extends LitElement {
       }
       if (file.name.match(/\.(json)$/i)) {
         this.annotations = await jsonFromFile(file);
+        console.log(this.annotations);
+        // this.annotations = await jsonFromFile(file);
       }
       if (file.name.match(/\.(zip)$/i)) {
         console.log("Dropped a zipped file");
@@ -73,7 +77,6 @@ export default class HbllModelViewerElementBase extends LitElement {
         y
       );
       console.log(positionAndNormal);
-      this.hotspots.push(positionAndNormal);
       this.requestUpdate();
       if (!positionAndNormal) {
         throw new Error("invalid click position");
@@ -86,14 +89,19 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private saveAnnotations() {
-    let blob = new Blob([JSON.stringify(this.hotspots)], {
+    let blob = new Blob([JSON.stringify(this.annotations)], {
         type: "text/plain;charset=utf-8",
       }),
       url = window.URL.createObjectURL(blob);
     this.downloader.href = url;
-    this.downloader.download = "annotations.txt";
+    this.downloader.download = "annotations.json";
     this.downloader.click();
     window.URL.revokeObjectURL(url);
+  }
+
+  private annotationClick(annotation: Annotation) {
+    this.currentAnnotation = annotation;
+    this.requestUpdate();
   }
 
   static get styles() {
@@ -102,40 +110,99 @@ export default class HbllModelViewerElementBase extends LitElement {
         width: 100%;
         height: 100vh;
       }
-
       button {
-        display: block;
-        width: 20px;
-        height: 20px;
-        border-radius: 10px;
-        border: none;
-        background-color: blue;
+        background: #fff;
+        border-radius: 32px;
+        border: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
         box-sizing: border-box;
+        cursor: pointer;
+        height: 24px;
+        padding-top: 2px;
+        padding-left: 6px;
+        padding-right: 6px;
+        font-size: 15px;
+        position: relative;
+        min-width: 24px;
       }
 
-      button[slot="hotspot-hand"] {
-        --min-hotspot-opacity: 0;
-        background-color: red;
+      button:not([data-visible]) {
+        background: transparent;
+        border: 4px solid #fff;
+        box-shadow: none;
+        pointer-events: none;
+        height: 32px;
+        min-width: 32px;
       }
 
-      button[slot="hotspot-foot"]:not([data-visible]) {
-        background-color: transparent;
-        border: 3px solid blue;
+      button:focus {
+        border: 4px solid rgb(0, 128, 200);
+        height: 32px;
+        outline: none;
+        min-width: 32px;
       }
 
-      #annotation {
-        background-color: #888888;
+      button:focus .HotspotAnnotation {
+        transition: opacity 0.3s;
+        opacity: 1;
+      }
+
+      button .HotspotAnnotation {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .HotspotAnnotation {
+        background: rgb(0, 0, 0, 0.8);
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+        color: rgba(0, 0, 0, 0.8);
+        display: block;
+        font-size: 12px;
+        font-weight: 200;
+        left: calc(100% + 1em);
+        max-width: 250px;
+        padding: 0.5em;
         position: absolute;
-        transform: translate(10px, 10px);
-        border-radius: 10px;
-        padding: 10px;
+        top: 50%;
+        width: max-content;
       }
+
+      .annotation_label {
+        font-size: 14px;
+        font-weight: 300;
+        text-align: center;
+        color: white;
+      }
+
+      .annotation_description {
+        color: white;
+        font-size: 12px;
+        font-weight: 200;
+        text-align: left;
+      }
+
+      .label_nav {
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        padding: 6px;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+        width: 200px;
+        background: rgb(0, 0, 0, 0.8);
+        border-radius: 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
+      }
+
       /* This keeps child nodes hidden while the element loads */
       :not(:defined) > * {
         display: none;
       }
 
-      .download {
+      #download {
         display: none;
       }
     `;
@@ -152,17 +219,38 @@ export default class HbllModelViewerElementBase extends LitElement {
         @click="${this.handleClick},"
         @camera-change=${this.cameraMoved}
       >
-        <button @click=${this.saveAnnotations}>
-          <div id="annotation">Save annotations</div>
-        </button>
-        ${this.hotspots.map(
-          (i) =>
+        <style>
+          ${this.annotations?.annotations?.map(
+            (i, index) => html` button[slot="hotspot-${i.name || "random"}"] {
+            background: ${i.fill_color || "#FFFFFFFF"}; }`
+          )};
+        </style>
+        ${this.annotations?.annotations?.map(
+          (i, index) =>
             html`<button
-              slot="hotspot-${i.position.x}-${i.position.y}-${i.position.z}"
+              @click=${(e: Event) => {
+                console.log(i);
+                this.annotationClick(i);
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+              slot="hotspot-${i.name || "rand"}"
               data-position="${i.position.x} ${i.position.y} ${i.position.z}"
               data-normal="${i.normal.x} ${i.normal.y} ${i.normal.z}"
-            ></button>`
+              data-visibility-attribute="visible"
+            >
+              ${index + 1}
+              <div class="HotspotAnnotation">
+                <div class="annotation_label">${i.name}</div>
+                <p class="annotation_description">${i.description}</p>
+              </div>
+            </button>`
         )}
+        <div class="label_nav">
+          <div class="annotation_label">
+            ${this.currentAnnotation?.name || "Select an annotion"}
+          </div>
+        </div>
       </model-viewer>
     `;
   }

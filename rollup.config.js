@@ -30,7 +30,8 @@ const onwarn = (warning, warn) => {
 };
 
 let plugins = [
-  resolve({ dedupe: ["three"] }),
+  resolve({ dedupe: ["three"], browser: true }),
+  commonjs(),
   replace({ "Reflect.decorate": "undefined" }),
 ];
 
@@ -54,34 +55,35 @@ const outputOptions = [
 ];
 
 if (NODE_ENV !== "development") {
-  const pluginsIE11 = [
-    ...plugins,
-    commonjs(),
-    polyfill(["object.values/auto"]),
-    cleanup({
-      // Ideally we'd also clean third_party/three, which saves
-      // ~45kb in filesize alone... but takes 2 minutes to build
-      include: ["lib/**"],
-      comments: "none",
-    }),
-  ];
+  // const pluginsIE11 = [
+  //   ...plugins,
+  //   resolve(),
+  //   commonjs(),
+  //   polyfill(["object.values/auto"]),
+  //   cleanup({
+  //     // Ideally we'd also clean third_party/three, which saves
+  //     // ~45kb in filesize alone... but takes 2 minutes to build
+  //     include: ["lib/**"],
+  //     comments: "none",
+  //   }),
+  // ];
 
-  // IE11 does not support modules, so they are removed here, as well as in a
-  // dedicated unit test build which is needed for the same reason.
-  outputOptions.push({
-    input: "./lib/hbll-model-viewer.js",
-    output: {
-      file: "./dist/hbll-model-viewer-umd.js",
-      sourcemap: true,
-      format: "umd",
-      name: "HbllModelViewerElement",
-    },
-    watch: {
-      include: watchFiles,
-    },
-    plugins: pluginsIE11,
-    onwarn,
-  });
+  // // IE11 does not support modules, so they are removed here, as well as in a
+  // // dedicated unit test build which is needed for the same reason.
+  // outputOptions.push({
+  //   input: "./lib/hbll-model-viewer.js",
+  //   output: {
+  //     file: "./dist/hbll-model-viewer-umd.js",
+  //     sourcemap: true,
+  //     format: "umd",
+  //     name: "HbllModelViewerElement",
+  //   },
+  //   watch: {
+  //     include: watchFiles,
+  //   },
+  //   plugins: pluginsIE11,
+  //   onwarn,
+  // });
 
   plugins = [...plugins, terser()];
 
