@@ -1,0 +1,7 @@
+---
+deployment:
+  tasks:
+    - "export DEPLOYPATH=/home/uur11/model-viewer.uur.byu.edu/"
+    - "/bin/cp -R example $DEPLOYPATH"
+    - "/bin/cp -R shared-assets $DEPLOYPATH"
+    - "/bin/cp -R dist $DEPLOYPATH"
