@@ -19,6 +19,7 @@ const cleanup = require("rollup-plugin-cleanup");
 const { terser } = require("rollup-plugin-terser");
 const commonjs = require("@rollup/plugin-commonjs");
 const polyfill = require("rollup-plugin-polyfill");
+const css = require("rollup-plugin-import-css");
 
 const { NODE_ENV } = process.env;
 
@@ -30,6 +31,7 @@ const onwarn = (warning, warn) => {
 };
 
 let plugins = [
+  css(),
   resolve({ dedupe: ["three"], browser: true }),
   commonjs(),
   replace({ "Reflect.decorate": "undefined" }),

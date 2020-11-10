@@ -73,3 +73,9 @@ export async function urlFromUnzippedFile(file: File) {
 export async function jsonFromFile(file: File) {
   return JSON.parse((await file.text()).toString());
 }
+
+export async function getJsonFromUrl(url: string): Promise<string | undefined> {
+  let json = await fetch(url);
+  if (json.ok) return JSON.parse((await json.text()).toString());
+  else return undefined;
+}

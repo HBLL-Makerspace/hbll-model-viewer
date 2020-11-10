@@ -35,3 +35,4 @@ export declare function createSafeObjectUrlFromUnsafe(unsafeUri: string): Promis
 export declare function urlFromArrayBuffer(contents: ArrayBuffer): SafeObjectUrl;
 export declare function urlFromUnzippedFile(file: File): Promise<string>;
 export declare function jsonFromFile(file: File): Promise<any>;
+export declare function getJsonFromUrl(url: string): Promise<string | undefined>;

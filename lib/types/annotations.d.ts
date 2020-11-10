@@ -12,9 +12,15 @@ export interface Annotation {
     vanish?: boolean;
     position: Position;
     normal: Position;
+    cameraOrbit: CameraOrbit;
 }
 export interface Position {
     x: number;
     y: number;
     z: number;
+}
+export interface CameraOrbit {
+    theta: number;
+    phi: number;
+    radius: number;
 }
