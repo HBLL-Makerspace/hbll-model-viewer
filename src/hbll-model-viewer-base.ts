@@ -10,12 +10,11 @@ import {
   urlFromUnzippedFile,
   jsonFromFile,
   getJsonFromUrl,
+  gettextFromFile,
 } from "./file-utils.js";
-import { AnnotationData, Annotation } from "./types/annotations.js";
+import { AnnotationData, Annotation, Manifest } from "./types/annotations.js";
 import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css.js";
-
-console.log(Marked.parse("I am using __markdown__."));
 
 const map_style = {
   height: "100vh",
@@ -29,6 +28,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   @property({ type: String }) annotation_src: string | null = null;
   @property({ type: String }) skybox_image: string | null = null;
   @property() annotations: AnnotationData | null = null;
+  @property() manifest_src: string | null = null;
 
   @internalProperty()
   cameraIsDirty: boolean;
@@ -39,10 +39,17 @@ export default class HbllModelViewerElementBase extends LitElement {
   @internalProperty()
   buttonStyles: any;
 
+  @internalProperty()
+  files: Map<string, string>;
+
+  @internalProperty()
+  manifest: Manifest | null = null;
+
   constructor() {
     super();
     this.cameraIsDirty = false;
     this.currentAnnotation = undefined;
+    this.files = new Map<string, string>();
   }
 
   async firstUpdated() {
@@ -50,11 +57,18 @@ export default class HbllModelViewerElementBase extends LitElement {
     await new Promise((r) => setTimeout(r, 0));
 
     if (this.annotation_src != undefined) {
-      let json = await getJsonFromUrl(this.annotation_src);
-      console.log(json);
-      this.annotations = JSON.parse(json || "");
+      this.annotations = await getJsonFromUrl(this.annotation_src);
     }
-    console.log(this.annotations);
+
+    if (this.manifest_src != undefined) {
+      this.manifest = await getJsonFromUrl(this.manifest_src);
+      if (this.manifest?.entries != undefined)
+        for (let i = 0; i < this.manifest?.entries.length || 0; i++) {
+          let text = await gettextFromFile(this.manifest?.entries[i].url);
+          if (text != undefined)
+            this.files.set(this.manifest?.entries[i].name, text);
+        }
+    }
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragover);
   }
@@ -67,7 +81,6 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private async onDrop(event: DragEvent) {
-    console.log(event);
     event.stopPropagation();
     event.preventDefault();
 
@@ -81,9 +94,11 @@ export default class HbllModelViewerElementBase extends LitElement {
         this.skybox_image = await urlFromUnzippedFile(file);
       }
       if (file.name.match(/\.(json)$/i)) {
+        if (file.name === "manifest.json") {
+          this.manifest = await jsonFromFile(file);
+        }
         this.annotations = await jsonFromFile(file);
-        console.log(this.annotations);
-        // this.annotations = await jsonFromFile(file);
+        // console.log(this.annotations);
       }
       if (file.name.match(/\.(zip)$/i)) {
         console.log("Dropped a zipped file");
@@ -92,6 +107,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private handleClick(event: MouseEvent) {
+    this.modelViewer.cameraTarget = `auto auto auto`;
     if (!this.cameraIsDirty) {
       if (!this.modelViewer) {
         throw new Error("Model Viewer doesn't exist");
@@ -103,7 +119,6 @@ export default class HbllModelViewerElementBase extends LitElement {
         x,
         y
       );
-      console.log(positionAndNormal);
       this.requestUpdate();
       if (!positionAndNormal) {
         throw new Error("invalid click position");
@@ -127,7 +142,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private saveCameraOrbit() {
-    console.log(JSON.stringify(this.modelViewer.getCameraOrbit()));
+    // console.log(JSON.stringify(this.modelViewer.getCameraOrbit()));
     let blob = new Blob([JSON.stringify(this.modelViewer.getCameraOrbit())], {
         type: "text/plain;charset=utf-8",
       }),
@@ -139,7 +154,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private annotationClick(annotation: Annotation | undefined) {
-    console.log(annotation);
+    // console.log(annotation);
     this.currentAnnotation = annotation;
     if (annotation == undefined) return;
     this.modelViewer.cameraTarget = `${annotation.position.x || "auto"}m ${
@@ -215,7 +230,7 @@ export default class HbllModelViewerElementBase extends LitElement {
         );
         this.annotationClick(
           this.annotations.annotations[
-            (index - 1) % this.annotations.annotations.length
+            index - 1 < 0 ? this.annotations.annotations.length - 1 : index - 1
           ]
         );
         this.shadowRoot
@@ -227,6 +242,22 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   static get styles() {
     return styles;
+  }
+
+  returnString(str: string) {
+    var frag = document.createRange().createContextualFragment(`${str}`);
+    return frag;
+  }
+
+  private getAnnotationDescription(annotation: Annotation) {
+    let text =
+      annotation.descriptionFileName != undefined
+        ? this.files.get(annotation.descriptionFileName)
+        : annotation.description;
+
+    return html`${(annotation.markdown || false) == true
+      ? html`${this.returnString(Marked.parse(text || ""))}`
+      : text}`;
   }
 
   render() {
@@ -263,14 +294,18 @@ export default class HbllModelViewerElementBase extends LitElement {
               ${index + 1}
               <div class="HotspotAnnotation">
                 <div class="annotation_label">${i.name}</div>
-                <p class="annotation_description">${i.description}</p>
+                <div class="annotation_description">
+                  ${this.getAnnotationDescription(i)}
+                </div>
               </div>
             </button>`
         )}
         ${this.src == undefined && this.annotations == undefined
           ? html``
           : this.nav_label()}
-        ${this.src == undefined ? this.no_model_msg() : html``}
+        ${this.annotations == undefined && this.src == undefined
+          ? this.no_model_msg()
+          : html``}
       </model-viewer>
     `;
   }

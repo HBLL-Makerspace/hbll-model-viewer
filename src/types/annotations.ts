@@ -7,6 +7,7 @@ export interface AnnotationData {
 export interface Annotation {
   name?: string;
   description?: string;
+  descriptionFileName?: string;
   fill_color?: string;
   border_color?: string;
   border_thickness?: number;
@@ -14,6 +15,7 @@ export interface Annotation {
   position: Position;
   normal: Position;
   cameraOrbit: CameraOrbit;
+  markdown?: Boolean;
 }
 
 export interface Position {
@@ -26,4 +28,19 @@ export interface CameraOrbit {
   theta: number;
   phi: number;
   radius: number;
+}
+
+export interface Manifest {
+  url: string;
+  entries: Array<FileEntry>;
+}
+
+export interface FileEntry {
+  name: string;
+  url: string;
+}
+
+export interface File {
+  name: string;
+  text: string;
 }

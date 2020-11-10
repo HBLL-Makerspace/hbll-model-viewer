@@ -4,11 +4,10 @@
   "annotations": [
     {
       "name": "skull_1",
-      "description": "This is a sample",
+      "markdown": true,
+      "descriptionFileName": "marked.md",
+      "description": "I am using __markdown__. ![](https://pandao.github.io/editor.md/images/logos/editormd-logo-180x180.png)",
       "fill_color": "#fce303",
-      "border_color": "",
-      "border_thickness": 1,
-      "vanish": true,
       "position": {
         "x": 0.051448423807264776,
         "y": 0.3115825443530399,

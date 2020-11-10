@@ -42,6 +42,7 @@ export const styles: CSSResult = css`
   button:focus .HotspotAnnotation {
     transition: opacity 0.3s;
     opacity: 1;
+    pointer-events: initial;
   }
 
   button .HotspotAnnotation {
@@ -63,6 +64,8 @@ export const styles: CSSResult = css`
     position: absolute;
     top: 50%;
     width: max-content;
+    overflow-y: auto;
+    max-height: 400px;
   }
 
   .annotation_label {
@@ -154,5 +157,26 @@ export const styles: CSSResult = css`
     display: grid;
     grid-template-columns: auto auto auto auto auto auto;
     padding: 6px;
+  }
+
+  /* width */
+  .HotspotAnnotation::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  /* Track */
+  .HotspotAnnotation::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Handle */
+  .HotspotAnnotation::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 2px;
+  }
+
+  /* Handle on hover */
+  .HotspotAnnotation::-webkit-scrollbar-thumb:hover {
+    background: #555;
   }
 `;

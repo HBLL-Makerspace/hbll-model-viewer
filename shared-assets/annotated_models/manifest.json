@@ -1,0 +1,17 @@
+{
+  "url": "../shared-assets/annotated_models/",
+  "entries": [
+    {
+      "name": "test.md",
+      "url": "../shared-assets/annotated_models/test.md"
+    },
+    {
+      "name": "marked.md",
+      "url": "../shared-assets/annotated_models/marked.md?v1.0.2"
+    },
+    {
+      "name": "showdown.md",
+      "url": "../shared-assets/annotated_models/showdown.md"
+    }
+  ]
+}
