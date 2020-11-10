@@ -2,16 +2,24 @@
   "url": "../shared-assets/annotated_models/",
   "entries": [
     {
-      "name": "test.md",
-      "url": "../shared-assets/annotated_models/test.md"
+      "name": "skull_1.md",
+      "url": "../shared-assets/annotated_models/skull_1.md"
     },
     {
-      "name": "marked.md",
-      "url": "../shared-assets/annotated_models/marked.md?v1.0.2"
+      "name": "skull_2.md",
+      "url": "../shared-assets/annotated_models/skull_2.md"
     },
     {
-      "name": "showdown.md",
-      "url": "../shared-assets/annotated_models/showdown.md"
+      "name": "skull_3.md",
+      "url": "../shared-assets/annotated_models/skull_3.md"
+    },
+    {
+      "name": "skull_4.md",
+      "url": "../shared-assets/annotated_models/skull_4.md"
+    },
+    {
+      "name": "skull_5.md",
+      "url": "../shared-assets/annotated_models/skull_5.md"
     }
   ]
 }

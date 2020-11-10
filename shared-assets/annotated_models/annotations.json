@@ -5,7 +5,7 @@
     {
       "name": "skull_1",
       "markdown": true,
-      "descriptionFileName": "marked.md",
+      "descriptionFileName": "skull_1.md",
       "description": "I am using __markdown__. ![](https://pandao.github.io/editor.md/images/logos/editormd-logo-180x180.png)",
       "fill_color": "#fce303",
       "position": {
@@ -27,6 +27,8 @@
     {
       "name": "skull_2",
       "description": "This is another annotation",
+      "markdown": true,
+      "descriptionFileName": "skull_2.md",
       "position": {
         "x": 0.14531843499324482,
         "y": 0.5627061118534998,
@@ -46,6 +48,8 @@
     {
       "name": "skull_3",
       "description": "This is a skull with some very nice looking bones",
+      "markdown": true,
+      "descriptionFileName": "skull_3.md",
       "position": {
         "x": 0.41861986778266336,
         "y": 0.4371212985821251,
@@ -65,6 +69,8 @@
     {
       "name": "skull_4",
       "description": "Yet another annotion",
+      "markdown": true,
+      "descriptionFileName": "skull_4.md",
       "position": {
         "x": -0.42131098943476464,
         "y": -0.47967868695991056,
@@ -84,6 +90,8 @@
     {
       "name": "skull_5",
       "description": "An annotation with a different color",
+      "markdown": true,
+      "descriptionFileName": "skull_5.md",
       "position": {
         "x": -0.9018575173601049,
         "y": -0.10467231500223007,

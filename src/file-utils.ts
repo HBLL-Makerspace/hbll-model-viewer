@@ -75,9 +75,7 @@ export async function jsonFromFile(file: File) {
 }
 
 export async function getJsonFromUrl(url: string): Promise<any> {
-  console.log("Getting: " + url);
   let json = await fetch(url);
-  console.log(json);
   if (json.ok) {
     return await json.json();
   } else return undefined;
