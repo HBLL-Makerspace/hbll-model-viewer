@@ -11,10 +11,11 @@ import {
   jsonFromFile,
   getJsonFromUrl,
   gettextFromFile,
-} from "./file-utils.js";
-import { AnnotationData, Annotation, Manifest } from "./types/annotations.js";
+} from "./file-utils";
+import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { Marked } from "@ts-stack/markdown";
-import { styles } from "./hbll-model-viewer-base.css.js";
+import { styles } from "./hbll-model-viewer-base.css";
+// import "material-components-web";
 
 const map_style = {
   height: "100vh",

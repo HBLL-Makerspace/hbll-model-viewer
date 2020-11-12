@@ -1,5 +1,4 @@
 import { css, CSSResult } from "lit-element";
-import "roboto-fontface";
 
 export const styles: CSSResult = css`
   model-viewer {
