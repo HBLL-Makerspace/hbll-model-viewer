@@ -1,0 +1,33 @@
+import { LitElement } from "lit-element";
+import { AnnotationData, Annotation, Manifest } from "./types/annotations";
+export default class HbllModelViewerElementBase extends LitElement {
+    readonly modelViewer?: any;
+    readonly downloader?: any;
+    src: string | null;
+    annotation_src: string | null;
+    skybox_image: string | null;
+    annotations: AnnotationData | null;
+    manifest_src: string | null;
+    cameraIsDirty: boolean;
+    currentAnnotation: Annotation | undefined;
+    buttonStyles: any;
+    files: Map<string, string>;
+    manifest: Manifest | null;
+    constructor();
+    firstUpdated(): Promise<void>;
+    private onDragover;
+    private onDrop;
+    private handleClick;
+    private cameraMoved;
+    private saveAnnotations;
+    private saveCameraOrbit;
+    private annotationClick;
+    private no_model_msg;
+    private nav_label;
+    private nextAnnotaion;
+    private previousAnnotaion;
+    static get styles(): import("lit-element").CSSResult;
+    returnString(str: string): DocumentFragment;
+    private getAnnotationDescription;
+    render(): import("lit-element").TemplateResult;
+}

@@ -15,7 +15,6 @@ import {
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css";
-// import "material-components-web";
 
 const map_style = {
   height: "100vh",
@@ -109,6 +108,7 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   private handleClick(event: MouseEvent) {
     this.modelViewer.cameraTarget = `auto auto auto`;
+    this.currentAnnotation = undefined;
     if (!this.cameraIsDirty) {
       if (!this.modelViewer) {
         throw new Error("Model Viewer doesn't exist");

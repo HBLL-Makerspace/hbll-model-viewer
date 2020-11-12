@@ -1,12 +1,12 @@
 import "@google/model-viewer";
 import HbllModelViewerElementBase from "./hbll-model-viewer-base";
-// import { MDCSwitch } from "@material/switch";
 
-// let el = document.querySelector(".mdc-switch");
-// let switchControl;
-// if (el != null) {
-//   switchControl = new MDCSwitch(el);
-// }
+import { MDCSwitch } from "@material/switch";
+
+let el = document.querySelector(".mdc-switch");
+if (el != undefined) {
+  const switchControl = new MDCSwitch(el);
+}
 
 export const HbllModelViewerElement = HbllModelViewerElementBase;
 
