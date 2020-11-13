@@ -15,6 +15,7 @@ import {
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css";
+import { mat_styles } from "./material.css";
 
 const map_style = {
   height: "100vh",
@@ -44,6 +45,9 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   @internalProperty()
   manifest: Manifest | null = null;
+
+  @internalProperty()
+  isFullscreen: boolean = false;
 
   constructor() {
     super();
@@ -242,7 +246,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   static get styles() {
-    return styles;
+    return [styles, mat_styles];
   }
 
   returnString(str: string) {
@@ -261,6 +265,27 @@ export default class HbllModelViewerElementBase extends LitElement {
       : text}`;
   }
 
+  private enter_fullscreen() {
+    let elem = this.modelViewer;
+    this.isFullscreen = true;
+    if (elem.requestFullscreen) {
+      elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+      /* Safari */
+      elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+      /* IE11 */
+      elem.msRequestFullscreen();
+    }
+  }
+
+  private exit_fullscreen() {
+    this.isFullscreen = false;
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+
   render() {
     return html`
       <a id="download"></a>
@@ -274,13 +299,15 @@ export default class HbllModelViewerElementBase extends LitElement {
       >
         <style>
           ${this.annotations?.annotations?.map(
-            (i, index) => html` button[slot="hotspot-${i.name || "random"}"] {
-            background: ${i.fill_color || "#FFFFFFFF"}; }`
+            (i, index) => html` .annotation[slot="hotspot-${i.name ||
+            "random"}"]
+            { background: ${i.fill_color || "#FFFFFFFF"}; }`
           )};
         </style>
         ${this.annotations?.annotations?.map(
           (i, index) =>
             html`<button
+              class="annotation"
               id="hotspot-${i.name || "rand"}"
               @click=${(e: Event) => {
                 this.annotationClick(i);
@@ -306,6 +333,18 @@ export default class HbllModelViewerElementBase extends LitElement {
         ${this.annotations == undefined && this.src == undefined
           ? this.no_model_msg()
           : html``}
+        <div class="fullscreen">
+          <button
+            class="mdc-icon-button material-icons"
+            @click=${(_) => {
+              this.isFullscreen
+                ? this.exit_fullscreen()
+                : this.enter_fullscreen();
+            }}
+          >
+            ${this.isFullscreen ? "fullscreen_exit" : "fullscreen"}
+          </button>
+        </div>
       </model-viewer>
     `;
   }

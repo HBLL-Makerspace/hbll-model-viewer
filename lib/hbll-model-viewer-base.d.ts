@@ -13,6 +13,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     buttonStyles: any;
     files: Map<string, string>;
     manifest: Manifest | null;
+    isFullscreen: boolean;
     constructor();
     firstUpdated(): Promise<void>;
     private onDragover;
@@ -26,8 +27,10 @@ export default class HbllModelViewerElementBase extends LitElement {
     private nav_label;
     private nextAnnotaion;
     private previousAnnotaion;
-    static get styles(): import("lit-element").CSSResult;
+    static get styles(): import("lit-element").CSSResult[];
     returnString(str: string): DocumentFragment;
     private getAnnotationDescription;
+    private enter_fullscreen;
+    private exit_fullscreen;
     render(): import("lit-element").TemplateResult;
 }

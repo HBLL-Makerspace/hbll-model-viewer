@@ -6,7 +6,7 @@ export const styles: CSSResult = css`
     height: 100vh;
     outline: none;
   }
-  button {
+  .annotation {
     background: #fff;
     border-radius: 32px;
     border: 0;
@@ -22,7 +22,7 @@ export const styles: CSSResult = css`
     min-width: 24px;
   }
 
-  button:not([data-visible]) {
+  .annotation:not([data-visible]) {
     background: transparent;
     border: 4px solid #fff;
     box-shadow: none;
@@ -31,20 +31,20 @@ export const styles: CSSResult = css`
     min-width: 32px;
   }
 
-  button:focus {
+  .annotation:focus {
     border: 4px solid rgb(0, 128, 200);
     height: 32px;
     outline: none;
     min-width: 32px;
   }
 
-  button:focus .HotspotAnnotation {
+  .annotation:focus .HotspotAnnotation {
     transition: opacity 0.3s;
     opacity: 1;
     pointer-events: initial;
   }
 
-  button .HotspotAnnotation {
+  .annotation .HotspotAnnotation {
     opacity: 0;
     pointer-events: none;
   }
@@ -95,6 +95,14 @@ export const styles: CSSResult = css`
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
+  }
+
+  .fullscreen {
+    position: absolute;
+    font-family: Arial, Helvetica, sans-serif;
+    bottom: 10px;
+    right: 10px;
+    white-space: nowrap;
   }
 
   /* This keeps child nodes hidden while the element loads */
