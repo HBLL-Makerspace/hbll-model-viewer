@@ -1,8 +1,12 @@
 import { LitElement } from "lit-element";
+import SettingsCard from "./components/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 export default class HbllModelViewerElementBase extends LitElement {
     readonly modelViewer?: any;
+    readonly settings?: SettingsCard;
     readonly downloader?: any;
+    readonly drawer_element?: any;
+    readonly fullscreen_btn?: any;
     src: string | null;
     annotation_src: string | null;
     skybox_image: string | null;
@@ -13,7 +17,8 @@ export default class HbllModelViewerElementBase extends LitElement {
     buttonStyles: any;
     files: Map<string, string>;
     manifest: Manifest | null;
-    isFullscreen: boolean;
+    show_settings: boolean;
+    showAnnotations: boolean;
     constructor();
     firstUpdated(): Promise<void>;
     private onDragover;
@@ -30,7 +35,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     static get styles(): import("lit-element").CSSResult[];
     returnString(str: string): DocumentFragment;
     private getAnnotationDescription;
-    private enter_fullscreen;
-    private exit_fullscreen;
+    private toggleFullscreen;
+    private isFullscreen;
     render(): import("lit-element").TemplateResult;
 }

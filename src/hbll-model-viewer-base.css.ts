@@ -1,10 +1,18 @@
 import { css, CSSResult } from "lit-element";
 
 export const styles: CSSResult = css`
+  ::host {
+    width: 100%;
+    height: 100%;
+  }
+  .disapear {
+    transition: opacity 0.3s;
+    opacity: 0;
+    pointer-events: none;
+  }
   model-viewer {
     width: 100%;
     height: 100vh;
-    outline: none;
   }
   .annotation {
     background: #fff;

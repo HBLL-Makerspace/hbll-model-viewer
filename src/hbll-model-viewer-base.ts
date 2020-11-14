@@ -12,10 +12,12 @@ import {
   getJsonFromUrl,
   gettextFromFile,
 } from "./file-utils";
+import SettingsCard from "./components/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css";
 import { mat_styles } from "./material.css";
+import { MDCRipple } from "@material/ripple";
 
 const map_style = {
   height: "100vh",
@@ -24,7 +26,10 @@ const map_style = {
 
 export default class HbllModelViewerElementBase extends LitElement {
   @query("model-viewer") readonly modelViewer?: any;
+  @query("settings-card") readonly settings?: SettingsCard;
   @query("a") readonly downloader?: any;
+  @query(".mdc-drawer") readonly drawer_element?: any;
+  @query("#fullscreen_btn") readonly fullscreen_btn?: any;
   @property({ type: String }) src: string | null = null;
   @property({ type: String }) annotation_src: string | null = null;
   @property({ type: String }) skybox_image: string | null = null;
@@ -47,7 +52,10 @@ export default class HbllModelViewerElementBase extends LitElement {
   manifest: Manifest | null = null;
 
   @internalProperty()
-  isFullscreen: boolean = false;
+  show_settings: boolean = false;
+
+  @internalProperty()
+  showAnnotations: boolean = true;
 
   constructor() {
     super();
@@ -75,6 +83,11 @@ export default class HbllModelViewerElementBase extends LitElement {
     }
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragover);
+
+    if (this.fullscreen_btn != undefined) {
+      const iconButtonRipple = new MDCRipple(this.fullscreen_btn);
+      iconButtonRipple.unbounded = true;
+    }
   }
 
   private onDragover(event: DragEvent) {
@@ -265,87 +278,112 @@ export default class HbllModelViewerElementBase extends LitElement {
       : text}`;
   }
 
-  private enter_fullscreen() {
-    let elem = this.modelViewer;
-    this.isFullscreen = true;
-    if (elem.requestFullscreen) {
-      elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-      /* Safari */
-      elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-      /* IE11 */
-      elem.msRequestFullscreen();
+  private async toggleFullscreen() {
+    if (!this.isFullscreen()) {
+      let elem = this.modelViewer;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        /* Safari */
+        await elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        /* IE11 */
+        await elem.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      }
     }
+
+    this.requestUpdate();
   }
 
-  private exit_fullscreen() {
-    this.isFullscreen = false;
-    if (document.exitFullscreen) {
-      document.exitFullscreen();
-    }
+  private isFullscreen(): boolean {
+    return window.innerHeight == screen.height;
   }
 
   render() {
     return html`
       <a id="download"></a>
-      <model-viewer
-        style=${map_style}
-        src=${this.src || ""}
-        skybox-image=${this.skybox_image || ""}
-        camera-controls
-        @click="${this.handleClick},"
-        @camera-change=${this.cameraMoved}
-      >
-        <style>
-          ${this.annotations?.annotations?.map(
-            (i, index) => html` .annotation[slot="hotspot-${i.name ||
-            "random"}"]
-            { background: ${i.fill_color || "#FFFFFFFF"}; }`
-          )};
-        </style>
-        ${this.annotations?.annotations?.map(
-          (i, index) =>
-            html`<button
-              class="annotation"
-              id="hotspot-${i.name || "rand"}"
+      <div id="container">
+        <model-viewer
+          style=${map_style}
+          src=${this.src || ""}
+          skybox-image=${this.skybox_image || ""}
+          camera-controls
+          @click="${this.handleClick},"
+          @camera-change=${this.cameraMoved}
+        >
+          <style>
+            ${this.annotations?.annotations?.map(
+              (i, index) => html` .annotation[slot="hotspot-${i.name ||
+              "random"}"]
+              { background: ${i.fill_color || "#FFFFFFFF"}; }`
+            )};
+          </style>
+          ${this.showAnnotations
+            ? this.annotations?.annotations?.map(
+                (i, index) =>
+                  html`<button
+                    class="annotation"
+                    id="hotspot-${i.name || "rand"}"
+                    @click=${(e: Event) => {
+                      this.annotationClick(i);
+                      e.stopPropagation();
+                      e.preventDefault();
+                    }}
+                    slot="hotspot-${i.name || "rand"}"
+                    data-position="${i.position.x} ${i.position.y} ${i.position
+                      .z}"
+                    data-normal="${i.normal.x} ${i.normal.y} ${i.normal.z}"
+                    data-visibility-attribute="visible"
+                  >
+                    ${index + 1}
+                    <div class="HotspotAnnotation">
+                      <div class="annotation_description">
+                        ${this.getAnnotationDescription(i)}
+                      </div>
+                    </div>
+                  </button>`
+              )
+            : html``}
+          ${this.src == undefined && this.annotations == undefined
+            ? html``
+            : this.nav_label()}
+          ${this.annotations == undefined && this.src == undefined
+            ? this.no_model_msg()
+            : html``}
+          <div class="fullscreen">
+            <button
+              class="mdc-icon-button material-icons"
               @click=${(e: Event) => {
-                this.annotationClick(i);
+                this.show_settings = !this.show_settings;
                 e.stopPropagation();
                 e.preventDefault();
               }}
-              slot="hotspot-${i.name || "rand"}"
-              data-position="${i.position.x} ${i.position.y} ${i.position.z}"
-              data-normal="${i.normal.x} ${i.normal.y} ${i.normal.z}"
-              data-visibility-attribute="visible"
             >
-              ${index + 1}
-              <div class="HotspotAnnotation">
-                <div class="annotation_description">
-                  ${this.getAnnotationDescription(i)}
-                </div>
-              </div>
-            </button>`
-        )}
-        ${this.src == undefined && this.annotations == undefined
-          ? html``
-          : this.nav_label()}
-        ${this.annotations == undefined && this.src == undefined
-          ? this.no_model_msg()
-          : html``}
-        <div class="fullscreen">
-          <button
-            class="mdc-icon-button material-icons"
-            @click=${(_) => {
-              this.isFullscreen
-                ? this.exit_fullscreen()
-                : this.enter_fullscreen();
+              settings
+            </button>
+            <button
+              class="mdc-icon-button material-icons mdc-menu-surface--anchor"
+              id="fullscreen_btn"
+              @click=${(_) => {
+                this.toggleFullscreen();
+              }}
+            >
+              ${this.isFullscreen() ? "fullscreen_exit" : "fullscreen"}
+            </button>
+          </div>
+
+          <settings-card
+            class="${this.show_settings ? html`` : "disapear"}"
+            @show-annotations=${(e) => {
+              this.showAnnotations = e.detail.showAnnotations;
             }}
-          >
-            ${this.isFullscreen ? "fullscreen_exit" : "fullscreen"}
-          </button>
-        </div>
-      </model-viewer>
+          ></settings-card>
+        </model-viewer>
+      </div>
     `;
   }
 }
