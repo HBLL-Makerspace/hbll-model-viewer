@@ -18,6 +18,7 @@ import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css";
 import { mat_styles } from "./material.css";
 import { MDCRipple } from "@material/ripple";
+import { ModelViewer } from "@google/model-viewer";
 
 const map_style = {
   height: "100vh",
@@ -25,7 +26,7 @@ const map_style = {
 };
 
 export default class HbllModelViewerElementBase extends LitElement {
-  @query("model-viewer") readonly modelViewer?: any;
+  @query("model-viewer") readonly modelViewer?: ModelViewer;
   @query("settings-card") readonly settings?: SettingsCard;
   @query("a") readonly downloader?: any;
   @query(".mdc-drawer") readonly drawer_element?: any;
@@ -262,7 +263,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     return [styles, mat_styles];
   }
 
-  returnString(str: string) {
+  private stringToHtml(str: string) {
     var frag = document.createRange().createContextualFragment(`${str}`);
     return frag;
   }
@@ -274,7 +275,7 @@ export default class HbllModelViewerElementBase extends LitElement {
         : annotation.description;
 
     return html`${(annotation.markdown || false) == true
-      ? html`${this.returnString(Marked.parse(text || ""))}`
+      ? html`${this.stringToHtml(Marked.parse(text || ""))}`
       : text}`;
   }
 
@@ -355,6 +356,7 @@ export default class HbllModelViewerElementBase extends LitElement {
             ? this.no_model_msg()
             : html``}
           <div class="fullscreen">
+            <button class="mdc-icon-button material-icons">edit</button>
             <button
               class="mdc-icon-button material-icons"
               @click=${(e: Event) => {
@@ -378,8 +380,10 @@ export default class HbllModelViewerElementBase extends LitElement {
 
           <settings-card
             class="${this.show_settings ? html`` : "disapear"}"
-            @show-annotations=${(e) => {
-              this.showAnnotations = e.detail.showAnnotations;
+            @settings-update=${(e) => {
+              this.showAnnotations = e.detail.settings.get("showAnnotations");
+              console.log(this.modelViewer.model);
+              this.modelViewer.model.material = null;
             }}
           ></settings-card>
         </model-viewer>

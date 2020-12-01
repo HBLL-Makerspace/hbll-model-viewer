@@ -40,7 +40,7 @@ export const styles: CSSResult = css`
   }
 
   .annotation:focus {
-    border: 4px solid rgb(0, 128, 200);
+    border: 4px solid var(--mdc-theme-secondary, rgb(0, 128, 200));
     height: 32px;
     outline: none;
     min-width: 32px;
@@ -93,12 +93,12 @@ export const styles: CSSResult = css`
     position: absolute;
     font-family: Arial, Helvetica, sans-serif;
     left: 50%;
-    bottom: 10px;
+    bottom: 0px;
     padding: 6px;
     transform: translate(-50%, -50%);
     white-space: nowrap;
     width: 200px;
-    background: rgb(0, 0, 0, 0.8);
+    background: var(--mdc-theme--surface, rgb(0, 0, 0, 0.8));
     border-radius: 500px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -108,7 +108,7 @@ export const styles: CSSResult = css`
   .fullscreen {
     position: absolute;
     font-family: Arial, Helvetica, sans-serif;
-    bottom: 10px;
+    bottom: 6px;
     right: 10px;
     white-space: nowrap;
   }

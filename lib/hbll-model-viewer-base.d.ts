@@ -1,8 +1,9 @@
 import { LitElement } from "lit-element";
 import SettingsCard from "./components/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
+import { ModelViewer } from "@google/model-viewer";
 export default class HbllModelViewerElementBase extends LitElement {
-    readonly modelViewer?: any;
+    readonly modelViewer?: ModelViewer;
     readonly settings?: SettingsCard;
     readonly downloader?: any;
     readonly drawer_element?: any;
@@ -33,7 +34,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     private nextAnnotaion;
     private previousAnnotaion;
     static get styles(): import("lit-element").CSSResult[];
-    returnString(str: string): DocumentFragment;
+    private stringToHtml;
     private getAnnotationDescription;
     private toggleFullscreen;
     private isFullscreen;

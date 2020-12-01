@@ -13,4 +13,8 @@ export const settings_stlye = css`
     padding: 16px;
     width: 300px;
   }
+
+  .mdc-switch {
+    --mdc-theme-surface: #37474f;
+  }
 `;

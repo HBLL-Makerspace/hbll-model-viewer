@@ -6,6 +6,7 @@ import {
   query,
   internalProperty,
   customElement,
+  queryAll,
 } from "lit-element";
 
 import { mat_styles } from "../material.css";
@@ -17,85 +18,91 @@ import { MDCCheckbox } from "@material/checkbox";
 import { MDCSwitch } from "@material/switch";
 
 export default class SettingsCard extends LitElement {
-  @query("#show-annotation-switch") readonly annotation_switch_element?: any;
   @query(".mdc-list") readonly list_element?: any;
+  @queryAll(".mdc-switch") readonly switch_elements?: Array<any>;
 
   @internalProperty()
-  showAnnotations: boolean = true;
+  switches: Map<string, MDCSwitch> = new Map<string, MDCSwitch>();
 
   @internalProperty()
-  annotation_checkbox: MDCSwitch | null = null;
+  settings: Map<string, any> = new Map<string, any>([
+    ["showAnnotations", true],
+    ["showTextures", true],
+  ]);
 
   constructor() {
     super();
   }
 
   firstUpdated() {
-    this.annotation_checkbox = new MDCSwitch(this.annotation_switch_element);
+    this.switch_elements?.forEach((s: HTMLElement) => {
+      this.switches[s.id] = new MDCSwitch(s);
+      if (this.settings[s.id] != null)
+        this.switches[s.id].checked = this.settings.get(s.id);
+    });
 
     const list = new MDCList(this.list_element);
     const listItemRipples = list.listElements.map(
       (listItemEl) => new MDCRipple(listItemEl)
     );
-
-    this.showAnnotations = true;
-    this.annotation_checkbox.checked = true;
   }
 
   static get styles() {
     return [settings_stlye, mat_styles];
   }
 
-  private async handleShowAnnotationClick(e: Event) {
-    e.stopPropagation();
-    e.preventDefault();
-    this.showAnnotations = !this.showAnnotations;
-    let myEvent = new CustomEvent("show-annotations", {
-      detail: { showAnnotations: this.showAnnotations },
-      bubbles: true,
-      composed: true,
-    });
-    this.dispatchEvent(myEvent);
+  private setting_switch(label: string, setting_id: string) {
+    let checked = this.settings.get(setting_id);
+    return html`<li
+      class="mdc-list-item"
+      tabindex="0"
+      @click=${(e: Event) => {
+        e.stopPropagation();
+        e.preventDefault();
+        this.settings.set(setting_id, !this.settings.get(setting_id));
 
-    await this.updateComplete;
-    if (this.annotation_checkbox != null) {
-      this.annotation_checkbox.checked = this.showAnnotations;
-    }
+        let myEvent = new CustomEvent("settings-update", {
+          detail: { settings: this.settings },
+          bubbles: true,
+          composed: true,
+        });
+        this.dispatchEvent(myEvent);
+        this.requestUpdate();
+      }}
+    >
+      <span class="mdc-list-item__ripple"></span>
+      <span class="mdc-list-item__text">${label}</span>
+      <span class="mdc-list-item__meta">
+        <div
+          class="mdc-switch ${checked ? "mdc-switch--checked" : ""}"
+          id="${setting_id}"
+        >
+          <div class="mdc-switch__track"></div>
+          <div class="mdc-switch__thumb-underlay">
+            <div class="mdc-switch__thumb"></div>
+            <input
+              type="checkbox"
+              id="basic-switch"
+              class="mdc-switch__native-control"
+              role="switch"
+              aria-checked="false"
+              ?checked=${checked}
+            />
+          </div>
+        </div>
+      </span>
+    </li>`;
   }
 
   render() {
     return html`<div class="mdc-card my-card">
       <div class="mdc-card__content">
-        <h1 class="mdc-typography--headline4">Settings</h1>
+        <h1 class="mdc-typography--headline4 mdc-theme--on-surface">
+          Settings
+        </h1>
         <ul class="mdc-list">
-          <li
-            class="mdc-list-item"
-            tabindex="0"
-            @click=${this.handleShowAnnotationClick}
-          >
-            <span class="mdc-list-item__ripple"></span>
-            <span class="mdc-list-item__text">Show annotations</span>
-            <span class="mdc-list-item__meta">
-              <div
-                class="mdc-switch ${this.showAnnotations
-                  ? "mdc-switch--checked"
-                  : ""}"
-                id="show-annotation-switch"
-              >
-                <div class="mdc-switch__track"></div>
-                <div class="mdc-switch__thumb-underlay">
-                  <div class="mdc-switch__thumb"></div>
-                  <input
-                    type="checkbox"
-                    id="basic-switch"
-                    class="mdc-switch__native-control"
-                    role="switch"
-                    aria-checked="false"
-                  />
-                </div>
-              </div>
-            </span>
-          </li>
+          ${this.setting_switch("Show annotations", "showAnnotations")}
+          ${this.setting_switch("Show textures", "showTextures")}
         </ul>
       </div>
     </div>`;

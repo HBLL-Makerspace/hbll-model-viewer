@@ -1,13 +1,13 @@
 import { LitElement } from "lit-element";
 import { MDCSwitch } from "@material/switch";
 export default class SettingsCard extends LitElement {
-    readonly annotation_switch_element?: any;
     readonly list_element?: any;
-    showAnnotations: boolean;
-    annotation_checkbox: MDCSwitch | null;
+    readonly switch_elements?: Array<any>;
+    switches: Map<string, MDCSwitch>;
+    settings: Map<string, any>;
     constructor();
     firstUpdated(): void;
     static get styles(): import("lit-element").CSSResult[];
-    private handleShowAnnotationClick;
+    private setting_switch;
     render(): import("lit-element").TemplateResult;
 }
