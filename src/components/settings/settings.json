@@ -1,0 +1,9 @@
+{
+  "settings": [
+    {
+      "name": "textures",
+      "label": "Show textures",
+      "default": true
+    }
+  ]
+}

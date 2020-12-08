@@ -12,18 +12,21 @@ import {
   getJsonFromUrl,
   gettextFromFile,
 } from "./file-utils";
-import SettingsCard from "./components/settings";
+import SettingsCard from "./components/settings/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { Marked } from "@ts-stack/markdown";
 import { styles } from "./hbll-model-viewer-base.css";
 import { mat_styles } from "./material.css";
 import { MDCRipple } from "@material/ripple";
 import { ModelViewer } from "@google/model-viewer";
+import * as THREE from "three";
 
 const map_style = {
   height: "100vh",
   width: "100%",
 };
+
+const materials = {};
 
 export default class HbllModelViewerElementBase extends LitElement {
   @query("model-viewer") readonly modelViewer?: ModelViewer;
@@ -58,11 +61,32 @@ export default class HbllModelViewerElementBase extends LitElement {
   @internalProperty()
   showAnnotations: boolean = true;
 
+  @internalProperty()
+  show_edit: boolean = false;
+
   constructor() {
     super();
     this.cameraIsDirty = false;
     this.currentAnnotation = undefined;
     this.files = new Map<string, string>();
+
+    materials["lambert"] = new THREE.MeshLambertMaterial({
+      color: 0xdddddd,
+    });
+    materials["phong"] = new THREE.MeshPhongMaterial({
+      color: 0xff0000,
+      specular: 0x009900,
+      shininess: 30,
+    });
+    materials["basic"] = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+    });
+    materials["wireframe"] = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      wireframe: true,
+    });
   }
 
   async firstUpdated() {
@@ -342,7 +366,7 @@ export default class HbllModelViewerElementBase extends LitElement {
                   >
                     ${index + 1}
                     <div class="HotspotAnnotation">
-                      <div class="annotation_description">
+                      <div class="mdc-card mdc-theme--on-surface">
                         ${this.getAnnotationDescription(i)}
                       </div>
                     </div>
@@ -356,9 +380,22 @@ export default class HbllModelViewerElementBase extends LitElement {
             ? this.no_model_msg()
             : html``}
           <div class="fullscreen">
-            <button class="mdc-icon-button material-icons">edit</button>
             <button
-              class="mdc-icon-button material-icons"
+              class="mdc-icon-button material-icons ${this.show_edit
+                ? "mdc-theme--surface mdc-theme--secondary rounded"
+                : ""}"
+              @click=${(e: Event) => {
+                this.show_edit = !this.show_edit;
+                e.stopPropagation();
+                e.preventDefault();
+              }}
+            >
+              edit
+            </button>
+            <button
+              class="mdc-icon-button material-icons ${this.show_settings
+                ? "mdc-theme--surface mdc-theme--secondary rounded"
+                : ""}"
               @click=${(e: Event) => {
                 this.show_settings = !this.show_settings;
                 e.stopPropagation();
@@ -379,13 +416,26 @@ export default class HbllModelViewerElementBase extends LitElement {
           </div>
 
           <settings-card
-            class="${this.show_settings ? html`` : "disapear"}"
+            class="${this.show_settings ? "" : "disapear"}"
             @settings-update=${(e) => {
               this.showAnnotations = e.detail.settings.get("showAnnotations");
+              this.modelViewer.model.materials[0].pbrMetallicRoughness[
+                "baseColorTexture"
+              ].texture.source.setURI();
+              console.log(
+                this.modelViewer.model.materials[0].pbrMetallicRoughness
+              );
+              this.modelViewer.model["materials"][0] = materials["wireframe"];
               console.log(this.modelViewer.model);
-              this.modelViewer.model.material = null;
+              // this.modelViewer.model.materials[0] = materials["wireframe"];
+              // this.modelViewer.model.materials[0].needsUpdate = true;
             }}
           ></settings-card>
+
+          <edit-card
+            class="${this.show_edit ? "" : "disapear"}"
+            @settings-update=${(e) => {}}
+          ></edit-card>
         </model-viewer>
       </div>
     `;

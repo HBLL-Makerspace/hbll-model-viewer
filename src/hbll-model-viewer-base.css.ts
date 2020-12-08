@@ -58,21 +58,16 @@ export const styles: CSSResult = css`
   }
 
   .HotspotAnnotation {
-    background: rgb(0, 0, 0, 0.8);
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-    color: rgba(0, 0, 0, 0.8);
     display: block;
     font-size: 12px;
     font-weight: 200;
     left: calc(100% + 1em);
     max-width: 250px;
-    padding: 0.5em;
     position: absolute;
     top: 50%;
     width: max-content;
-    overflow-y: auto;
     max-height: 400px;
+    overflow-y: auto;
   }
 
   .annotation_label {
@@ -193,5 +188,9 @@ export const styles: CSSResult = css`
   /* Handle on hover */
   .HotspotAnnotation::-webkit-scrollbar-thumb:hover {
     background: #555;
+  }
+
+  .rounded {
+    border-radius: 200px;
   }
 `;

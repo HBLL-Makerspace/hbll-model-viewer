@@ -1,5 +1,5 @@
 import { LitElement } from "lit-element";
-import SettingsCard from "./components/settings";
+import SettingsCard from "./components/settings/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
 import { ModelViewer } from "@google/model-viewer";
 export default class HbllModelViewerElementBase extends LitElement {
@@ -20,6 +20,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     manifest: Manifest | null;
     show_settings: boolean;
     showAnnotations: boolean;
+    show_edit: boolean;
     constructor();
     firstUpdated(): Promise<void>;
     private onDragover;
