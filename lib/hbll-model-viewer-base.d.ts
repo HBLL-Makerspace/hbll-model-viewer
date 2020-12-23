@@ -12,7 +12,6 @@ export default class HbllModelViewerElementBase extends LitElement {
     annotation_src: string | null;
     skybox_image: string | null;
     annotations: AnnotationData | null;
-    manifest_src: string | null;
     cameraIsDirty: boolean;
     currentAnnotation: Annotation | undefined;
     buttonStyles: any;
@@ -21,12 +20,14 @@ export default class HbllModelViewerElementBase extends LitElement {
     show_settings: boolean;
     showAnnotations: boolean;
     show_edit: boolean;
+    show_dimensions: boolean;
+    add_annotation_mode: boolean;
+    annotation_list: Array<Annotation>;
     constructor();
     firstUpdated(): Promise<void>;
     private onDragover;
     private onDrop;
     private handleClick;
-    private cameraMoved;
     private saveAnnotations;
     private saveCameraOrbit;
     private annotationClick;
@@ -39,5 +40,11 @@ export default class HbllModelViewerElementBase extends LitElement {
     private getAnnotationDescription;
     private toggleFullscreen;
     private isFullscreen;
+    private change_name;
     render(): import("lit-element").TemplateResult;
+    private remove_annotation;
+    private download_project;
+    private change_index;
+    private on_model_load;
+    private render_dimensions;
 }

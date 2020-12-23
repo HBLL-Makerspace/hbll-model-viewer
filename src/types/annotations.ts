@@ -5,7 +5,7 @@ export interface AnnotationData {
 }
 
 export interface Annotation {
-  name?: string;
+  name: string | undefined;
   description?: string;
   descriptionFileName?: string;
   fill_color?: string;
@@ -16,6 +16,7 @@ export interface Annotation {
   normal: Position;
   cameraOrbit: CameraOrbit;
   markdown?: Boolean;
+  uid: string;
 }
 
 export interface Position {

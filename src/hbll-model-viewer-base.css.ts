@@ -39,22 +39,28 @@ export const styles: CSSResult = css`
     min-width: 32px;
   }
 
-  .annotation:focus {
+  .annotation:focus-within {
     border: 4px solid var(--mdc-theme-secondary, rgb(0, 128, 200));
     height: 32px;
     outline: none;
     min-width: 32px;
+    z-index: 1000000 !important;
   }
 
-  .annotation:focus .HotspotAnnotation {
+  .annotation:focus-within .HotspotAnnotation {
     transition: opacity 0.3s;
     opacity: 1;
     pointer-events: initial;
+    z-index: 1000000 !important;
   }
 
   .annotation .HotspotAnnotation {
     opacity: 0;
     pointer-events: none;
+  }
+
+  .annotation:not(:focus-within) {
+    z-index: -1;
   }
 
   .HotspotAnnotation {
@@ -192,5 +198,64 @@ export const styles: CSSResult = css`
 
   .rounded {
     border-radius: 200px;
+  }
+
+  .card-padded {
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: left;
+    white-space: pre-wrap;
+  }
+
+  [contenteditable="true"]:active,
+  [contenteditable="true"]:focus,
+  div {
+    border: none;
+    outline: none;
+  }
+
+  :not(:defined) > * {
+    display: none;
+  }
+
+  .dot {
+    display: block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    background: #fff;
+    --min-hotspot-opacity: 0;
+  }
+
+  .dim {
+    background: #fff;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    color: rgba(0, 0, 0, 0.8);
+    display: block;
+    font-family: Futura, Helvetica Neue, sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    max-width: 128px;
+    overflow-wrap: break-word;
+    padding: 0.5em 1em;
+    position: absolute;
+    width: max-content;
+    height: max-content;
+    transform: translate3d(-50%, -50%, 0);
+    --min-hotspot-opacity: 0;
+  }
+
+  .show {
+    --min-hotspot-opacity: 1;
+  }
+
+  .hide {
+    display: none;
+  }
+
+  .hide-enforce {
+    display: none !important;
   }
 `;

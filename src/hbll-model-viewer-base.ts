@@ -20,6 +20,8 @@ import { mat_styles } from "./material.css";
 import { MDCRipple } from "@material/ripple";
 import { ModelViewer } from "@google/model-viewer";
 import * as THREE from "three";
+import { uid } from "uid";
+import JSZip from "jszip";
 
 const map_style = {
   height: "100vh",
@@ -37,8 +39,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   @property({ type: String }) src: string | null = null;
   @property({ type: String }) annotation_src: string | null = null;
   @property({ type: String }) skybox_image: string | null = null;
-  @property() annotations: AnnotationData | null = null;
-  @property() manifest_src: string | null = null;
+  @property() annotations: AnnotationData | null = { annotations: [] };
 
   @internalProperty()
   cameraIsDirty: boolean;
@@ -63,6 +64,15 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   @internalProperty()
   show_edit: boolean = false;
+
+  @internalProperty()
+  show_dimensions: boolean = false;
+
+  @internalProperty()
+  add_annotation_mode: boolean = false;
+
+  @internalProperty()
+  annotation_list: Array<Annotation> = [];
 
   constructor() {
     super();
@@ -97,15 +107,15 @@ export default class HbllModelViewerElementBase extends LitElement {
       this.annotations = await getJsonFromUrl(this.annotation_src);
     }
 
-    if (this.manifest_src != undefined) {
-      this.manifest = await getJsonFromUrl(this.manifest_src);
-      if (this.manifest?.entries != undefined)
-        for (let i = 0; i < this.manifest?.entries.length || 0; i++) {
-          let text = await gettextFromFile(this.manifest?.entries[i].url);
-          if (text != undefined)
-            this.files.set(this.manifest?.entries[i].name, text);
-        }
-    }
+    // if (this.manifest_src != undefined) {
+    //   this.manifest = await getJsonFromUrl(this.manifest_src);
+    //   if (this.manifest?.entries != undefined)
+    //     for (let i = 0; i < this.manifest?.entries.length || 0; i++) {
+    //       let text = await gettextFromFile(this.manifest?.entries[i].url);
+    //       if (text != undefined)
+    //         this.files.set(this.manifest?.entries[i].name, text);
+    //     }
+    // }
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragover);
 
@@ -148,30 +158,67 @@ export default class HbllModelViewerElementBase extends LitElement {
     }
   }
 
-  private handleClick(event: MouseEvent) {
+  private async handleClick(event: MouseEvent) {
     this.modelViewer.cameraTarget = `auto auto auto`;
     this.currentAnnotation = undefined;
     if (!this.cameraIsDirty) {
       if (!this.modelViewer) {
         throw new Error("Model Viewer doesn't exist");
       }
-      const rect = this.modelViewer.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      const positionAndNormal = this.modelViewer.positionAndNormalFromPoint(
-        x,
-        y
-      );
-      this.requestUpdate();
-      if (!positionAndNormal) {
-        throw new Error("invalid click position");
+      if (this.add_annotation_mode) {
+        const rect = this.modelViewer.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        const positionAndNormal = this.modelViewer.positionAndNormalFromPoint(
+          x,
+          y
+        );
+        if (!positionAndNormal) {
+          throw new Error("invalid click position");
+        }
+
+        var uid_ = uid(32).toString() + ".md";
+        this.files.set(
+          uid_,
+          "### This is a test \n\nClick on the edit button on the top of this popup to edit this text. Edited text will be done in markdown."
+        );
+
+        this.add_annotation_mode = false;
+        await this.updateComplete;
+
+        this.annotation_list = this.annotation_list.concat({
+          position: positionAndNormal.position,
+          normal: positionAndNormal.normal,
+          cameraOrbit: this.modelViewer.getCameraOrbit(),
+          name: `${this.annotation_list.length + 1}`,
+          description: `${this.annotation_list.length + 1}`,
+          descriptionFileName: uid_,
+          markdown: true,
+          uid: uid(32),
+        });
+
+        // this.annotations?.annotations.push({
+        //   position: positionAndNormal.position,
+        //   normal: positionAndNormal.normal,
+        //   cameraOrbit: this.modelViewer.getCameraOrbit(),
+        //   name: `${this.annotations.annotations.length + 1}`,
+        //   description: `${this.annotations.annotations.length + 1}`,
+        //   descriptionFileName: uid_,
+        //   markdown: true,
+        // });
+        await this.requestUpdate();
       }
     } else this.cameraIsDirty = false;
   }
 
-  private cameraMoved() {
-    this.cameraIsDirty = true;
-  }
+  // shouldUpdate(changedProperties) {
+  //   console.log(changedProperties);
+  //   return true;
+  // }
+
+  // private cameraMoved() {
+  //   this.cameraIsDirty = true;
+  // }
 
   private saveAnnotations() {
     let blob = new Blob([JSON.stringify(this.annotations)], {
@@ -197,7 +244,6 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private annotationClick(annotation: Annotation | undefined) {
-    // console.log(annotation);
     this.currentAnnotation = annotation;
     if (annotation == undefined) return;
     this.modelViewer.cameraTarget = `${annotation.position.x || "auto"}m ${
@@ -235,24 +281,18 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   private nextAnnotaion() {
     if (this.currentAnnotation == undefined) {
-      this.annotationClick(this.annotations?.annotations[0]);
+      this.annotationClick(this.annotation_list[0]);
       this.shadowRoot
-        ?.getElementById(
-          "hotspot-" + this.annotations?.annotations[0]?.name || "rand"
-        )
+        ?.getElementById("hotspot-" + this.annotation_list[0]?.uid || "rand")
         ?.focus();
     } else {
       if (this.annotations != undefined) {
-        let index = this.annotations.annotations.indexOf(
-          this.currentAnnotation
-        );
+        let index = this.annotation_list.indexOf(this.currentAnnotation);
         this.annotationClick(
-          this.annotations.annotations[
-            (index + 1) % this.annotations.annotations.length
-          ]
+          this.annotation_list[(index + 1) % this.annotation_list.length]
         );
         this.shadowRoot
-          ?.getElementById("hotspot-" + this.currentAnnotation?.name || "rand")
+          ?.getElementById("hotspot-" + this.currentAnnotation?.uid || "rand")
           ?.focus();
       }
     }
@@ -260,24 +300,20 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   private previousAnnotaion() {
     if (this.currentAnnotation == undefined) {
-      this.annotationClick(this.annotations?.annotations[0]);
+      this.annotationClick(this.annotation_list[0]);
       this.shadowRoot
-        ?.getElementById(
-          "hotspot-" + this.annotations?.annotations[0]?.name || "rand"
-        )
+        ?.getElementById("hotspot-" + this.annotation_list[0]?.uid || "rand")
         ?.focus();
     } else {
       if (this.annotations != undefined) {
-        let index = this.annotations.annotations.indexOf(
-          this.currentAnnotation
-        );
+        let index = this.annotation_list.indexOf(this.currentAnnotation);
         this.annotationClick(
-          this.annotations.annotations[
-            index - 1 < 0 ? this.annotations.annotations.length - 1 : index - 1
+          this.annotation_list[
+            index - 1 < 0 ? this.annotation_list.length - 1 : index - 1
           ]
         );
         this.shadowRoot
-          ?.getElementById("hotspot-" + this.currentAnnotation?.name || "rand")
+          ?.getElementById("hotspot-" + this.currentAnnotation?.uid || "rand")
           ?.focus();
       }
     }
@@ -295,12 +331,25 @@ export default class HbllModelViewerElementBase extends LitElement {
   private getAnnotationDescription(annotation: Annotation) {
     let text =
       annotation.descriptionFileName != undefined
-        ? this.files.get(annotation.descriptionFileName)
-        : annotation.description;
+        ? this.files.get(annotation.descriptionFileName)?.trim()
+        : annotation.description?.trim();
 
-    return html`${(annotation.markdown || false) == true
+    return html`${(annotation.markdown || false) == true && !this.show_edit
       ? html`${this.stringToHtml(Marked.parse(text || ""))}`
-      : text}`;
+      : this.show_edit
+      ? html`<div
+          contenteditable="true"
+          @focusout=${(e) => {
+            console.log(e.target.innerText);
+            this.files.set(
+              annotation?.descriptionFileName || "null",
+              e.target.innerText.trim()
+            );
+          }}
+        >
+          ${text?.trim()}
+        </div>`
+      : text?.trim()}`;
   }
 
   private async toggleFullscreen() {
@@ -328,6 +377,12 @@ export default class HbllModelViewerElementBase extends LitElement {
     return window.innerHeight == screen.height;
   }
 
+  private change_name(name: string, new_name: string) {
+    var found = this.annotation_list.find((e) => e.name == name);
+    if (found != undefined) found.name = new_name;
+    this.requestUpdate("annotation_list", this.annotation_list);
+  }
+
   render() {
     return html`
       <a id="download"></a>
@@ -338,27 +393,30 @@ export default class HbllModelViewerElementBase extends LitElement {
           skybox-image=${this.skybox_image || ""}
           camera-controls
           @click="${this.handleClick},"
-          @camera-change=${this.cameraMoved}
+          @load=${(e) => {
+            this.on_model_load(e);
+          }}
         >
           <style>
-            ${this.annotations?.annotations?.map(
-              (i, index) => html` .annotation[slot="hotspot-${i.name ||
+            ${this.annotation_list?.map(
+              (i, index) => html` .annotation[slot="hotspot-${i.uid ||
               "random"}"]
               { background: ${i.fill_color || "#FFFFFFFF"}; }`
             )};
           </style>
+          ${this.render_dimensions(this.show_dimensions ? "" : "hide-enforce")}
           ${this.showAnnotations
-            ? this.annotations?.annotations?.map(
+            ? this.annotation_list?.map(
                 (i, index) =>
                   html`<button
                     class="annotation"
-                    id="hotspot-${i.name || "rand"}"
+                    id="hotspot-${i.uid || "rand"}"
                     @click=${(e: Event) => {
                       this.annotationClick(i);
                       e.stopPropagation();
                       e.preventDefault();
                     }}
-                    slot="hotspot-${i.name || "rand"}"
+                    slot="hotspot-${i.uid || "rand"}"
                     data-position="${i.position.x} ${i.position.y} ${i.position
                       .z}"
                     data-normal="${i.normal.x} ${i.normal.y} ${i.normal.z}"
@@ -366,7 +424,7 @@ export default class HbllModelViewerElementBase extends LitElement {
                   >
                     ${index + 1}
                     <div class="HotspotAnnotation">
-                      <div class="mdc-card mdc-theme--on-surface">
+                      <div class="mdc-card mdc-theme--on-surface card-padded">
                         ${this.getAnnotationDescription(i)}
                       </div>
                     </div>
@@ -418,10 +476,11 @@ export default class HbllModelViewerElementBase extends LitElement {
           <settings-card
             class="${this.show_settings ? "" : "disapear"}"
             @settings-update=${(e) => {
+              this.show_dimensions = e.detail.settings.get("showDimensions");
               this.showAnnotations = e.detail.settings.get("showAnnotations");
-              this.modelViewer.model.materials[0].pbrMetallicRoughness[
-                "baseColorTexture"
-              ].texture.source.setURI();
+              this.modelViewer.model.materials[0].pbrMetallicRoughness.setBaseColorFactor(
+                [1, 1, 1, 0.5]
+              );
               console.log(
                 this.modelViewer.model.materials[0].pbrMetallicRoughness
               );
@@ -435,9 +494,216 @@ export default class HbllModelViewerElementBase extends LitElement {
           <edit-card
             class="${this.show_edit ? "" : "disapear"}"
             @settings-update=${(e) => {}}
+            .annotations="${this.annotation_list}"
+            @edit-add-mode=${(e) => {
+              console.log("Entering add annotation mode.");
+              this.add_annotation_mode = true;
+              this.cameraIsDirty = false;
+            }}
+            @change-name=${(e) => {
+              this.change_name(e.detail.name, e.detail.new_name);
+            }}
+            @change-index=${(e) => {
+              this.change_index(e.detail.oldIndex, e.detail.newIndex);
+            }}
+            @download-request=${(e) => this.download_project()}
+            @remove-annotation=${(e) => this.remove_annotation(e.detail.index)}
           ></edit-card>
         </model-viewer>
       </div>
     `;
+  }
+
+  private remove_annotation(index_: number) {
+    this.annotation_list = this.annotation_list.filter(
+      (e, index) => index != index_
+    );
+  }
+
+  private async download_project() {
+    console.log("Downloading");
+    var zip = JSZip();
+    const glTF = await this.modelViewer.exportScene();
+    zip.file("model.glb", glTF);
+    if (this.annotations != undefined)
+      this.annotations.annotations = this.annotation_list;
+    zip.file("annotations.json", JSON.stringify(this.annotation_list));
+    this.annotations?.annotations.forEach((el) => {
+      zip.file(
+        el.descriptionFileName || "null",
+        this.files.get(el.descriptionFileName || "null") || ""
+      );
+    });
+
+    var blob = await zip.generateAsync({ type: "blob" });
+    var url = window.URL.createObjectURL(blob);
+    this.downloader.href = url;
+    this.downloader.download = "model.zip";
+    this.downloader.click();
+    window.URL.revokeObjectURL(url);
+  }
+
+  private change_index(oldIndex: number, newIndex: number) {
+    console.log("Changing from " + oldIndex + " to " + newIndex);
+    const movedItem = this.annotation_list[oldIndex];
+    const remainingItems = this.annotation_list.filter(
+      (item, index) => index != oldIndex
+    );
+
+    if (remainingItems != undefined && movedItem != undefined)
+      this.annotation_list = [
+        ...remainingItems.slice(0, newIndex),
+        movedItem,
+        ...remainingItems.slice(newIndex),
+      ];
+
+    this.requestUpdate();
+  }
+
+  private on_model_load(e: Event) {
+    const center = this.modelViewer.getCameraTarget();
+    const size = this.modelViewer.getDimensions();
+    const x2 = size.x / 2;
+    const y2 = size.y / 2;
+    const z2 = size.z / 2;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot+X-Y+Z",
+      position: `${center.x + x2} ${center.y - y2} ${center.z + z2}`,
+    });
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dim+X-Y",
+      position: `${center.x + x2} ${center.y - y2} ${center.z}`,
+    });
+    this.modelViewer.querySelector(
+      'div[slot="hotspot-dim+X-Y"]'
+    ).textContent = `${(size.z * 100).toFixed(0)} cm`;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot+X-Y-Z",
+      position: `${center.x + x2} ${center.y - y2} ${center.z - z2}`,
+    });
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dim+X-Z",
+      position: `${center.x + x2} ${center.y} ${center.z - z2}`,
+    });
+    this.modelViewer.querySelector(
+      'div[slot="hotspot-dim+X-Z"]'
+    ).textContent = `${(size.y * 100).toFixed(0)} cm`;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot+X+Y-Z",
+      position: `${center.x + x2} ${center.y + y2} ${center.z - z2}`,
+    });
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dim+Y-Z",
+      position: `${center.x} ${center.y + y2} ${center.z - z2}`,
+    });
+    this.modelViewer.querySelector(
+      'div[slot="hotspot-dim+Y-Z"]'
+    ).textContent = `${(size.x * 100).toFixed(0)} cm`;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot-X+Y-Z",
+      position: `${center.x - x2} ${center.y + y2} ${center.z - z2}`,
+    });
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dim-X-Z",
+      position: `${center.x - x2} ${center.y} ${center.z - z2}`,
+    });
+    this.modelViewer.querySelector(
+      'div[slot="hotspot-dim-X-Z"]'
+    ).textContent = `${(size.y * 100).toFixed(0)} cm`;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot-X-Y-Z",
+      position: `${center.x - x2} ${center.y - y2} ${center.z - z2}`,
+    });
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dim-X-Y",
+      position: `${center.x - x2} ${center.y - y2} ${center.z}`,
+    });
+    this.modelViewer.querySelector(
+      'div[slot="hotspot-dim-X-Y"]'
+    ).textContent = `${(size.z * 100).toFixed(0)} cm`;
+
+    this.modelViewer.updateHotspot({
+      name: "hotspot-dot-X-Y+Z",
+      position: `${center.x - x2} ${center.y - y2} ${center.z + z2}`,
+    });
+  }
+
+  private render_dimensions(insert: string) {
+    return html`<div
+        slot="hotspot-dot+X-Y+Z"
+        class="dot ${insert}"
+        data-position="1 -1 1"
+        data-normal="1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dim+X-Y"
+        class="dim ${insert}"
+        data-position="1 -1 0"
+        data-normal="1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dot+X-Y-Z"
+        class="dot ${insert}"
+        data-position="1 -1 -1"
+        data-normal="1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dim+X-Z"
+        class="dim ${insert}"
+        data-position="1 0 -1"
+        data-normal="1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dot+X+Y-Z"
+        class="dot show ${insert}"
+        data-position="1 1 -1"
+        data-normal="0 1 0"
+      ></div>
+      <div
+        slot="hotspot-dim+Y-Z"
+        class="dim show ${insert}"
+        data-position="0 -1 -1"
+        data-normal="0 1 0"
+      ></div>
+      <div
+        slot="hotspot-dot-X+Y-Z"
+        class="dot show ${insert}"
+        data-position="-1 1 -1"
+        data-normal="0 1 0"
+      ></div>
+      <div
+        slot="hotspot-dim-X-Z"
+        class="dim ${insert}"
+        data-position="-1 0 -1"
+        data-normal="-1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dot-X-Y-Z"
+        class="dot ${insert}"
+        data-position="-1 -1 -1"
+        data-normal="-1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dim-X-Y"
+        class="dim ${insert}"
+        data-position="-1 -1 0"
+        data-normal="-1 0 0"
+      ></div>
+      <div
+        slot="hotspot-dot-X-Y+Z"
+        class="dot ${insert}"
+        data-position="-1 -1 1"
+        data-normal="-1 0 0"
+      ></div>`;
   }
 }

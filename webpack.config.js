@@ -93,6 +93,9 @@ module.exports = [
     devServer: {
       port: 8080, // Specify a port number to listen for requests
     },
+    resolve: {
+      fallback: { stream: require.resolve("stream-browserify") },
+    },
     module: {
       rules: [
         {

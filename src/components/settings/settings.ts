@@ -28,6 +28,7 @@ export default class SettingsCard extends LitElement {
   settings: Map<string, any> = new Map<string, any>([
     ["showAnnotations", true],
     ["showTextures", true],
+    ["showDimenions", false],
   ]);
 
   constructor() {
@@ -103,6 +104,7 @@ export default class SettingsCard extends LitElement {
         <ul class="mdc-list">
           ${this.setting_switch("Show annotations", "showAnnotations")}
           ${this.setting_switch("Show textures", "showTextures")}
+          ${this.setting_switch("Show dimensions", "showDimensions")}
         </ul>
       </div>
     </div>`;
