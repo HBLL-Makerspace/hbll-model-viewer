@@ -74,6 +74,10 @@ export async function jsonFromFile(file: File) {
   return JSON.parse((await file.text()).toString());
 }
 
+export async function jsonFromText(text: string) {
+  return JSON.parse(text.toString());
+}
+
 export async function getJsonFromUrl(url: string): Promise<any> {
   let json = await fetch(url);
   if (json.ok) {

@@ -11,6 +11,8 @@ import {
   jsonFromFile,
   getJsonFromUrl,
   gettextFromFile,
+  jsonFromText,
+  urlFromArrayBuffer,
 } from "./file-utils";
 import SettingsCard from "./components/settings/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
@@ -21,7 +23,7 @@ import { MDCRipple } from "@material/ripple";
 import { ModelViewer } from "@google/model-viewer";
 import * as THREE from "three";
 import { uid } from "uid";
-import JSZip from "jszip";
+import JSZip, { JSZipObject } from "jszip";
 
 const map_style = {
   height: "100vh",
@@ -74,6 +76,15 @@ export default class HbllModelViewerElementBase extends LitElement {
   @internalProperty()
   annotation_list: Array<Annotation> = [];
 
+  @internalProperty()
+  second_updated: boolean = false;
+
+  @internalProperty()
+  loading: boolean = false;
+
+  @internalProperty()
+  downloading: boolean = false;
+
   constructor() {
     super();
     this.cameraIsDirty = false;
@@ -97,6 +108,17 @@ export default class HbllModelViewerElementBase extends LitElement {
       color: 0xffffff,
       wireframe: true,
     });
+  }
+
+  // This is a lit element function that is acalled when the element has finished an update.
+  updated(changedProperties) {
+    // This is to fix a wierd bug where when removing a annotation all following annotaions do not show up on the skull.
+    // The HTML exists for the annotations, yet they do not render. This is fixed by disabling all annotations then reshowing them.
+    // There might be a more elegant solution, however this works fine at the present.
+    if (this.second_updated) {
+      this.second_updated = false;
+      this.showAnnotations = true;
+    }
   }
 
   async firstUpdated() {
@@ -145,14 +167,42 @@ export default class HbllModelViewerElementBase extends LitElement {
       if (file.name.match(/\.(hdr|png|jpg|jpeg)$/i)) {
         this.skybox_image = await urlFromUnzippedFile(file);
       }
-      if (file.name.match(/\.(json)$/i)) {
-        if (file.name === "manifest.json") {
-          this.manifest = await jsonFromFile(file);
-        }
-        this.annotations = await jsonFromFile(file);
-        // console.log(this.annotations);
-      }
+      // if (file.name.match(/\.(json)$/i)) {
+      //   if (file.name === "manifest.json") {
+      //     this.manifest = await jsonFromFile(file);
+      //   }
+      //   this.annotations = await jsonFromFile(file);
+      //   // console.log(this.annotations);
+      // }
       if (file.name.match(/\.(zip)$/i)) {
+        var zip = await JSZip.loadAsync(file);
+        zip.forEach(async (name, file_data: JSZipObject) => {
+          console.log(file_data);
+          if (name.match(/\.(glb)$/i)) {
+            this.loading = true;
+            this.src = urlFromArrayBuffer(
+              await file_data.async("arraybuffer")
+            ).unsafeUrl;
+            this.loading = false;
+          }
+          if (name.match(/\.(md)$/i)) {
+            this.files.set(name, await file_data.async("text"));
+          }
+          if (name.match(/\.(hdr|png|jpg|jpeg)$/i)) {
+            this.skybox_image = urlFromArrayBuffer(
+              await file_data.async("arraybuffer")
+            ).unsafeUrl;
+          }
+          if (name.match(/\.(json)$/i)) {
+            this.annotations = await jsonFromText(
+              await file_data.async("text")
+            );
+            if (this.annotations?.annotations != undefined)
+              this.annotation_list = this.annotations?.annotations;
+            // console.log(this.annotations);
+          }
+        });
+        console.log(zip);
         console.log("Dropped a zipped file");
       }
     }
@@ -196,25 +246,10 @@ export default class HbllModelViewerElementBase extends LitElement {
           markdown: true,
           uid: uid(32),
         });
-
-        // this.annotations?.annotations.push({
-        //   position: positionAndNormal.position,
-        //   normal: positionAndNormal.normal,
-        //   cameraOrbit: this.modelViewer.getCameraOrbit(),
-        //   name: `${this.annotations.annotations.length + 1}`,
-        //   description: `${this.annotations.annotations.length + 1}`,
-        //   descriptionFileName: uid_,
-        //   markdown: true,
-        // });
         await this.requestUpdate();
       }
     } else this.cameraIsDirty = false;
   }
-
-  // shouldUpdate(changedProperties) {
-  //   console.log(changedProperties);
-  //   return true;
-  // }
 
   // private cameraMoved() {
   //   this.cameraIsDirty = true;
@@ -255,8 +290,23 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   private no_model_msg() {
     return html`<div slot="poster" class="drag_drop_text unselectable">
-      Drag and drop a model here!<br />
-      <small class="unselectable">Add an HDR for environment</small>
+      ${this.loading
+        ? html`<div class="lds-spinner">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>`
+        : html`Drag and drop a model here!<br />
+            <small class="unselectable">Add an HDR for environment</small>`}
     </div>`;
   }
 
@@ -335,7 +385,7 @@ export default class HbllModelViewerElementBase extends LitElement {
         : annotation.description?.trim();
 
     return html`${(annotation.markdown || false) == true && !this.show_edit
-      ? html`${this.stringToHtml(Marked.parse(text || ""))}`
+      ? html`${this.stringToHtml(Marked.parse(text?.trim() || ""))}`
       : this.show_edit
       ? html`<div
           contenteditable="true"
@@ -434,7 +484,7 @@ export default class HbllModelViewerElementBase extends LitElement {
           ${this.src == undefined && this.annotations == undefined
             ? html``
             : this.nav_label()}
-          ${this.annotations == undefined && this.src == undefined
+          ${this.src == undefined || this.src === ""
             ? this.no_model_msg()
             : html``}
           <div class="fullscreen">
@@ -508,26 +558,44 @@ export default class HbllModelViewerElementBase extends LitElement {
             }}
             @download-request=${(e) => this.download_project()}
             @remove-annotation=${(e) => this.remove_annotation(e.detail.index)}
+            @change-annotation-color=${(e) =>
+              this.change_annotation_color(e.detail.index, e.detail.color)}
+            ?downloading="${this.downloading}"
           ></edit-card>
         </model-viewer>
       </div>
     `;
   }
 
+  private change_annotation_color(index: number, color: string) {
+    if (this.annotation_list[index].fill_color !== color) {
+      // this.annotation_list[index].fill_color = color;
+      this.annotation_list = this.annotation_list.filter((e, index_) => {
+        if (index_ === index) e.fill_color = color;
+        return true;
+      });
+      // this.requestUpdate();
+    }
+  }
+
   private remove_annotation(index_: number) {
     this.annotation_list = this.annotation_list.filter(
       (e, index) => index != index_
     );
+    this.showAnnotations = false;
+    this.second_updated = true;
   }
 
   private async download_project() {
     console.log("Downloading");
+    this.downloading = true;
     var zip = JSZip();
     const glTF = await this.modelViewer.exportScene();
     zip.file("model.glb", glTF);
     if (this.annotations != undefined)
       this.annotations.annotations = this.annotation_list;
-    zip.file("annotations.json", JSON.stringify(this.annotation_list));
+    zip.file("annotations.json", JSON.stringify(this.annotations));
+    console.log(this.annotations);
     this.annotations?.annotations.forEach((el) => {
       zip.file(
         el.descriptionFileName || "null",
@@ -541,6 +609,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     this.downloader.download = "model.zip";
     this.downloader.click();
     window.URL.revokeObjectURL(url);
+    this.downloading = false;
   }
 
   private change_index(oldIndex: number, newIndex: number) {

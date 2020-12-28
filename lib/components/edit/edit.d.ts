@@ -1,15 +1,17 @@
 import { LitElement } from "lit-element";
 import { MDCSwitch } from "@material/switch";
 import { Annotation } from "../../types/annotations";
-import Picker from "vanilla-picker";
+import "@simonwep/pickr/dist/themes/nano.min.css";
+import Pickr from "@simonwep/pickr";
 export default class EditCard extends LitElement {
     readonly list_element?: any;
-    readonly annotation_list?: any;
+    readonly annotation_list?: HTMLElement | undefined;
     readonly switch_elements?: Array<any>;
     annotations: Array<Annotation> | undefined;
+    downloading: boolean | undefined;
     switches: Map<string, MDCSwitch>;
     settings: Map<string, any>;
-    pickers: Map<number, Picker>;
+    pickrs: Map<string, Pickr>;
     constructor();
     firstUpdated(): void;
     updated(_: any): void;
@@ -17,7 +19,9 @@ export default class EditCard extends LitElement {
     static get styles(): import("lit-element").CSSResult[];
     private add_annotation_button;
     private change_name;
+    private _pickr;
     private _anotation;
+    private change_annotation_color;
     private remove_annotation;
     private download_event;
     render(): import("lit-element").TemplateResult;

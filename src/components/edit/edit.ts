@@ -19,14 +19,18 @@ import { MDCSwitch } from "@material/switch";
 import { AnnotationData, Annotation } from "../../types/annotations";
 import Picker from "vanilla-picker";
 
+import "@simonwep/pickr/dist/themes/nano.min.css";
+import Pickr from "@simonwep/pickr";
+
 import { Sortable, MultiDrag, Swap, OnSpill, AutoScroll } from "sortablejs";
 
 export default class EditCard extends LitElement {
   @query(".mdc-list") readonly list_element?: any;
-  @query("#annotation_list") readonly annotation_list?: any;
+  @query("#annotation_list") readonly annotation_list?: HTMLElement | undefined;
   @queryAll(".mdc-switch") readonly switch_elements?: Array<any>;
 
   @property() annotations: Array<Annotation> | undefined = [];
+  @property() downloading: boolean | undefined;
 
   @internalProperty()
   switches: Map<string, MDCSwitch> = new Map<string, MDCSwitch>();
@@ -37,10 +41,7 @@ export default class EditCard extends LitElement {
     ["showTextures", true],
   ]);
 
-  @internalProperty()
-  pickers: Map<number, Picker> = new Map<number, Picker>();
-
-  // annotation_list_sortable: any;
+  pickrs: Map<string, Pickr> = new Map<string, Pickr>();
 
   constructor() {
     super();
@@ -57,20 +58,16 @@ export default class EditCard extends LitElement {
     const listItemRipples = list.listElements.map(
       (listItemEl) => new MDCRipple(listItemEl)
     );
-    // this.annotation_list_sortable = Sortable.create(this.annotation_list, {
-    //   onEnd: (event) => {
-    //     this.requestUpdate();
-    //     // this.change_index(event.oldIndex, event.newIndex);
-    //   },
-    // });
   }
 
   updated(_) {
-    console.log("Updated");
     this.annotations?.forEach((el) => {
       var name = this.shadowRoot?.getElementById(el.uid);
       if (name != undefined) name.innerHTML = el.name || "";
+
+      // this.pickrs.set(el.uid, undefined);
     });
+    console.log("Downloading: " + this.downloading);
   }
 
   private change_index(oldIndex: number, newIndex: number) {
@@ -118,11 +115,74 @@ export default class EditCard extends LitElement {
     this.dispatchEvent(myEvent);
   }
 
+  private _pickr(annotation: Annotation, index: number) {
+    var color_box = document.createElement("span");
+    color_box.setAttribute("class", "color-box");
+    color_box.setAttribute(
+      "style",
+      "background-color: " +
+        (annotation.fill_color == undefined ? "#ffffff" : annotation.fill_color)
+    );
+
+    var color_picker = document.createElement("span");
+    color_picker.setAttribute("id", annotation.uid + "-color-picker");
+    color_picker.setAttribute("class", "color-picker");
+
+    color_box.appendChild(color_picker);
+
+    var pickr = Pickr.create({
+      el: color_picker,
+      theme: "nano", // or 'monolith', or 'nano'
+
+      swatches: [
+        "rgba(244, 67, 54, 1)",
+        "rgba(233, 30, 99, 1)",
+        "rgba(156, 39, 176, 1)",
+        "rgba(103, 58, 183, 2)",
+        "rgba(63, 81, 181, 1)",
+        "rgba(33, 150, 243, 1)",
+        "rgba(3, 169, 244, 1)",
+        "rgba(0, 188, 212, 1)",
+        "rgba(0, 150, 136, 1)",
+        "rgba(76, 175, 80, 1)",
+        "rgba(139, 195, 74, 1)",
+        "rgba(205, 220, 57, 1)",
+        "rgba(255, 235, 59, 1)",
+        "rgba(255, 193, 7, 1)",
+      ],
+
+      components: {
+        // Main components
+        preview: true,
+        // opacity: true,
+        hue: true,
+
+        // Input / output Options
+        interaction: {
+          hex: true,
+          rgba: true,
+          input: true,
+          save: true,
+        },
+      },
+    });
+
+    pickr.on("save", (color, instance: Pickr) => {
+      this.change_annotation_color(index, color.toHEXA().toString());
+      if (
+        this.annotations != undefined &&
+        this.annotations[index].fill_color !== color.toHEXA().toString()
+      )
+        instance.hide();
+    });
+    pickr.on("show", (color, instance: Pickr) => {
+      instance.setColor(annotation.fill_color || "#ffffff");
+    });
+
+    return color_box;
+  }
+
   private _anotation(annotation: Annotation, index: number) {
-    // var picker = new Picker({
-    //   parent: this.parentElement || new HTMLElement(),
-    // });
-    // this.pickers.set(index, picker);
     return html`<li class="mdc-list-item" tabindex="0" draggable="true" @dragstart=${(
       e
     ) => e.dataTransfer.setData("index", index)} @drop=${(e) =>
@@ -139,14 +199,25 @@ export default class EditCard extends LitElement {
       );
     }}>${annotation.name}</span></span
       >
-      <span class="mdc-list-item__meta"><span class="color-box" style="background-color: ${
-        annotation.fill_color
-      };" @click=${(e: Event) => {}}></span><span class="close" @click=${(
-      e
-    ) => {
+      <span class="mdc-list-item__meta">${this._pickr(
+        annotation,
+        index
+      )}<span class="close" @click=${(e) => {
       this.remove_annotation(index);
     }}></span></span>
     </li>`;
+  }
+
+  private change_annotation_color(index: number, color: string) {
+    // if (this.annotations != undefined)
+    // this.annotations[index].fill_color = color;
+    let myEvent = new CustomEvent("change-annotation-color", {
+      detail: { index: index, color: color },
+      bubbles: true,
+      composed: true,
+    });
+    this.dispatchEvent(myEvent);
+    // this.requestUpdate();
   }
 
   private remove_annotation(index: number) {
@@ -170,24 +241,38 @@ export default class EditCard extends LitElement {
   }
 
   render() {
-    console.log("rendered");
     // delete this.annotation_list_sortable;
     return html`<div class="mdc-card my-card">
       <div class="mdc-card__content">
         <h1 class="mdc-typography--headline4 mdc-theme--on-surface">
           Edit
           <span
-            ><button
-              class="mdc-icon-button material-icons"
-              @click=${(e: Event) => {
-                // this.download();
-                e.stopPropagation();
-                e.preventDefault();
-                this.download_event();
-              }}
-            >
-              download
-            </button></span
+            >${this.downloading != undefined || this.downloading != null
+              ? html`<div class="lds-spinner">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>`
+              : html`<button
+                  class="mdc-icon-button material-icons"
+                  @click=${(e: Event) => {
+                    // this.download();
+                    e.stopPropagation();
+                    e.preventDefault();
+                    this.download_event();
+                  }}
+                >
+                  download
+                </button>`}</span
           >
         </h1>
         <ul class="mdc-list annotation-list" id="annotation_list">

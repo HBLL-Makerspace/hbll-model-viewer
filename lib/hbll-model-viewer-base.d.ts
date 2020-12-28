@@ -23,7 +23,11 @@ export default class HbllModelViewerElementBase extends LitElement {
     show_dimensions: boolean;
     add_annotation_mode: boolean;
     annotation_list: Array<Annotation>;
+    second_updated: boolean;
+    loading: boolean;
+    downloading: boolean;
     constructor();
+    updated(changedProperties: any): void;
     firstUpdated(): Promise<void>;
     private onDragover;
     private onDrop;
@@ -42,6 +46,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     private isFullscreen;
     private change_name;
     render(): import("lit-element").TemplateResult;
+    private change_annotation_color;
     private remove_annotation;
     private download_project;
     private change_index;
