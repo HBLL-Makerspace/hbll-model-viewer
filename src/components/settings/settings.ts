@@ -29,6 +29,8 @@ export default class SettingsCard extends LitElement {
     ["showAnnotations", true],
     ["showTextures", true],
     ["showDimenions", false],
+    ["showBackground", true],
+    ["light_model_from_env", true],
   ]);
 
   constructor() {
@@ -103,8 +105,9 @@ export default class SettingsCard extends LitElement {
         </h1>
         <ul class="mdc-list">
           ${this.setting_switch("Show annotations", "showAnnotations")}
-          ${this.setting_switch("Show textures", "showTextures")}
           ${this.setting_switch("Show dimensions", "showDimensions")}
+          ${this.setting_switch("Show Background", "showBackground")}
+          ${this.setting_switch("Environment Light", "light_model_from_env")}
         </ul>
       </div>
     </div>`;

@@ -36,6 +36,9 @@ const materials = {};
 
 const converter = new Showdown.Converter({});
 
+const white_image =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QAAd2KE6QAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAHdElNRQfkDB0WKzfw5BbTAAAACklEQVQI12NoAAAAggCB3UNq9AAAACV0RVh0ZGF0ZTpjcmVhdGUAMjAyMC0xMi0yOVQyMjo0Mzo0MiswMDowMN0BY+gAAAAldEVYdGRhdGU6bW9kaWZ5ADIwMjAtMTItMjlUMjI6NDM6NDIrMDA6MDCsXNtUAAAAAElFTkSuQmCC";
+
 export default class HbllModelViewerElementBase extends LitElement {
   @query("model-viewer") readonly modelViewer?: ModelViewer;
   @query("settings-card") readonly settings?: SettingsCard;
@@ -89,6 +92,12 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   @internalProperty()
   downloading: boolean = false;
+
+  @internalProperty()
+  show_background: boolean = true;
+
+  @internalProperty()
+  light_model_from_env: boolean = true;
 
   constructor() {
     super();
@@ -452,7 +461,8 @@ export default class HbllModelViewerElementBase extends LitElement {
         <model-viewer
           style=${map_style}
           src=${this.src || ""}
-          skybox-image=${this.skybox_image || ""}
+          skybox-image=${this.show_background ? this.skybox_image || "" : null}
+          environment-image=${this.light_model_from_env ? null : white_image}
           camera-controls
           @click="${this.handleClick},"
           @load=${(e) => {
@@ -542,6 +552,10 @@ export default class HbllModelViewerElementBase extends LitElement {
             @settings-update=${(e) => {
               this.show_dimensions = e.detail.settings.get("showDimensions");
               this.showAnnotations = e.detail.settings.get("showAnnotations");
+              this.show_background = e.detail.settings.get("showBackground");
+              this.light_model_from_env = e.detail.settings.get(
+                "light_model_from_env"
+              );
             }}
           ></settings-card>
 

@@ -27,6 +27,8 @@ export default class HbllModelViewerElementBase extends LitElement {
     second_updated: boolean;
     loading: boolean;
     downloading: boolean;
+    show_background: boolean;
+    light_model_from_env: boolean;
     constructor();
     updated(changedProperties: any): void;
     firstUpdated(): Promise<void>;
