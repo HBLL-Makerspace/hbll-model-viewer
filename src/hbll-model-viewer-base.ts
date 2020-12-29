@@ -13,6 +13,7 @@ import {
   gettextFromFile,
   jsonFromText,
   urlFromArrayBuffer,
+  createSafeObjectURL,
 } from "./file-utils";
 import SettingsCard from "./components/settings/settings";
 import { AnnotationData, Annotation, Manifest } from "./types/annotations";
@@ -23,7 +24,8 @@ import { MDCRipple } from "@material/ripple";
 import { ModelViewer } from "@google/model-viewer";
 import * as THREE from "three";
 import { uid } from "uid";
-import JSZip, { JSZipObject } from "jszip";
+import JSZip, { files, JSZipObject } from "jszip";
+import Showdown from "showdown";
 
 const map_style = {
   height: "100vh",
@@ -31,6 +33,8 @@ const map_style = {
 };
 
 const materials = {};
+
+const converter = new Showdown.Converter({});
 
 export default class HbllModelViewerElementBase extends LitElement {
   @query("model-viewer") readonly modelViewer?: ModelViewer;
@@ -42,6 +46,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   @property({ type: String }) annotation_src: string | null = null;
   @property({ type: String }) skybox_image: string | null = null;
   @property() annotations: AnnotationData | null = { annotations: [] };
+  @property() edit: boolean | undefined = false;
 
   @internalProperty()
   cameraIsDirty: boolean;
@@ -127,6 +132,20 @@ export default class HbllModelViewerElementBase extends LitElement {
 
     if (this.annotation_src != undefined) {
       this.annotations = await getJsonFromUrl(this.annotation_src);
+      if (this.annotations != undefined) {
+        this.annotation_list = this.annotations?.annotations;
+        if (this.annotation_list != undefined) {
+          var index_last = this.annotation_src.lastIndexOf("/");
+          var path = this.annotation_src.slice(0, index_last) + "/";
+          this.annotation_list.forEach(async (ann) => {
+            if (ann.descriptionFileName != undefined)
+              this.files.set(
+                ann.descriptionFileName,
+                await (await fetch(path + ann.descriptionFileName)).text()
+              );
+          });
+        }
+      }
     }
 
     // if (this.manifest_src != undefined) {
@@ -167,17 +186,9 @@ export default class HbllModelViewerElementBase extends LitElement {
       if (file.name.match(/\.(hdr|png|jpg|jpeg)$/i)) {
         this.skybox_image = await urlFromUnzippedFile(file);
       }
-      // if (file.name.match(/\.(json)$/i)) {
-      //   if (file.name === "manifest.json") {
-      //     this.manifest = await jsonFromFile(file);
-      //   }
-      //   this.annotations = await jsonFromFile(file);
-      //   // console.log(this.annotations);
-      // }
       if (file.name.match(/\.(zip)$/i)) {
         var zip = await JSZip.loadAsync(file);
         zip.forEach(async (name, file_data: JSZipObject) => {
-          console.log(file_data);
           if (name.match(/\.(glb)$/i)) {
             this.loading = true;
             this.src = urlFromArrayBuffer(
@@ -188,10 +199,10 @@ export default class HbllModelViewerElementBase extends LitElement {
           if (name.match(/\.(md)$/i)) {
             this.files.set(name, await file_data.async("text"));
           }
-          if (name.match(/\.(hdr|png|jpg|jpeg)$/i)) {
-            this.skybox_image = urlFromArrayBuffer(
-              await file_data.async("arraybuffer")
-            ).unsafeUrl;
+          if (name.match(/\.(hdr)$/i)) {
+            this.skybox_image =
+              createSafeObjectURL(await file_data.async("blob")).unsafeUrl +
+              "#.hdr";
           }
           if (name.match(/\.(json)$/i)) {
             this.annotations = await jsonFromText(
@@ -202,8 +213,6 @@ export default class HbllModelViewerElementBase extends LitElement {
             // console.log(this.annotations);
           }
         });
-        console.log(zip);
-        console.log("Dropped a zipped file");
       }
     }
   }
@@ -384,13 +393,15 @@ export default class HbllModelViewerElementBase extends LitElement {
         ? this.files.get(annotation.descriptionFileName)?.trim()
         : annotation.description?.trim();
 
+    let marked = converter.makeHtml(text || "");
+
     return html`${(annotation.markdown || false) == true && !this.show_edit
-      ? html`${this.stringToHtml(Marked.parse(text?.trim() || ""))}`
+      ? // ? html`${this.stringToHtml(Marked.parse(text?.trim() || ""))}`
+        html`${this.stringToHtml(marked)}`
       : this.show_edit
       ? html`<div
           contenteditable="true"
           @focusout=${(e) => {
-            console.log(e.target.innerText);
             this.files.set(
               annotation?.descriptionFileName || "null",
               e.target.innerText.trim()
@@ -434,6 +445,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   render() {
+    console.log("Edit: " + this.edit);
     return html`
       <a id="download"></a>
       <div id="container">
@@ -488,18 +500,20 @@ export default class HbllModelViewerElementBase extends LitElement {
             ? this.no_model_msg()
             : html``}
           <div class="fullscreen">
-            <button
-              class="mdc-icon-button material-icons ${this.show_edit
-                ? "mdc-theme--surface mdc-theme--secondary rounded"
-                : ""}"
-              @click=${(e: Event) => {
-                this.show_edit = !this.show_edit;
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              edit
-            </button>
+            ${this.edit !== false
+              ? html`<button
+                  class="mdc-icon-button material-icons ${this.show_edit
+                    ? "mdc-theme--surface mdc-theme--secondary rounded"
+                    : ""}"
+                  @click=${(e: Event) => {
+                    this.show_edit = !this.show_edit;
+                    e.stopPropagation();
+                    e.preventDefault();
+                  }}
+                >
+                  edit
+                </button>`
+              : html``}
             <button
               class="mdc-icon-button material-icons ${this.show_settings
                 ? "mdc-theme--surface mdc-theme--secondary rounded"
@@ -528,16 +542,6 @@ export default class HbllModelViewerElementBase extends LitElement {
             @settings-update=${(e) => {
               this.show_dimensions = e.detail.settings.get("showDimensions");
               this.showAnnotations = e.detail.settings.get("showAnnotations");
-              this.modelViewer.model.materials[0].pbrMetallicRoughness.setBaseColorFactor(
-                [1, 1, 1, 0.5]
-              );
-              console.log(
-                this.modelViewer.model.materials[0].pbrMetallicRoughness
-              );
-              this.modelViewer.model["materials"][0] = materials["wireframe"];
-              console.log(this.modelViewer.model);
-              // this.modelViewer.model.materials[0] = materials["wireframe"];
-              // this.modelViewer.model.materials[0].needsUpdate = true;
             }}
           ></settings-card>
 
@@ -546,7 +550,6 @@ export default class HbllModelViewerElementBase extends LitElement {
             @settings-update=${(e) => {}}
             .annotations="${this.annotation_list}"
             @edit-add-mode=${(e) => {
-              console.log("Entering add annotation mode.");
               this.add_annotation_mode = true;
               this.cameraIsDirty = false;
             }}
@@ -587,7 +590,6 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private async download_project() {
-    console.log("Downloading");
     this.downloading = true;
     var zip = JSZip();
     const glTF = await this.modelViewer.exportScene();
@@ -595,13 +597,15 @@ export default class HbllModelViewerElementBase extends LitElement {
     if (this.annotations != undefined)
       this.annotations.annotations = this.annotation_list;
     zip.file("annotations.json", JSON.stringify(this.annotations));
-    console.log(this.annotations);
     this.annotations?.annotations.forEach((el) => {
       zip.file(
         el.descriptionFileName || "null",
         this.files.get(el.descriptionFileName || "null") || ""
       );
     });
+    if (this.skybox_image != null) {
+      zip.file("sky_box.hdr", (await fetch(this.skybox_image)).blob());
+    }
 
     var blob = await zip.generateAsync({ type: "blob" });
     var url = window.URL.createObjectURL(blob);
@@ -613,7 +617,6 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   private change_index(oldIndex: number, newIndex: number) {
-    console.log("Changing from " + oldIndex + " to " + newIndex);
     const movedItem = this.annotation_list[oldIndex];
     const remainingItems = this.annotation_list.filter(
       (item, index) => index != oldIndex

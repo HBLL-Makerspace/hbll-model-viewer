@@ -12,6 +12,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     annotation_src: string | null;
     skybox_image: string | null;
     annotations: AnnotationData | null;
+    edit: boolean | undefined;
     cameraIsDirty: boolean;
     currentAnnotation: Annotation | undefined;
     buttonStyles: any;

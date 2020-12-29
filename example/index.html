@@ -9,49 +9,15 @@
     <meta name="author" content="Ben Brenkman" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <!-- <link rel="stylesheet" href="styles.css?v=1.0.0" /> -->
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    />
-    <link rel="stylesheet" href="../dist/bundle.css?v=1.0.17" />
-    <link
-      href="https://fonts.googleapis.com/css?family=Roboto:300,400,500"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/nano.min.css"
-    />
-    <!-- 'nano' theme -->
-
-    <script
-      type="module"
-      src="../dist/hbll-model-viewer.min.js?v=1.2.1"
-    ></script>
+    <link rel="stylesheet" href="../dist/bundle.css" />
+    <script type="module" src="../dist/hbll-model-viewer.min.js"></script>
   </head>
 
-  <hbll-model-viewer></hbll-model-viewer>
+  <!-- <hbll-model-viewer></hbll-model-viewer> -->
 
-  <!-- <hbll-model-viewer
-    src="../shared-assets/annotated_models/decimatedskull_2.glb"
-    skybox_image="../shared-assets/annotated_models/quarry_02_8k.hdr"
-    annotation_src="../shared-assets/annotated_models/annotations.json?v=1.1.0"
-    manifest_src="../shared-assets/annotated_models/manifest.json?v=1.1.0"
-  ></hbll-model-viewer> -->
-
-  <!-- <div class="mdc-switch">
-    <div class="mdc-switch__track"></div>
-    <div class="mdc-switch__thumb-underlay">
-      <div class="mdc-switch__thumb"></div>
-      <input
-        type="checkbox"
-        id="basic-switch"
-        class="mdc-switch__native-control"
-        role="switch"
-        aria-checked="false"
-      />
-    </div>
-  </div>
-  <label for="basic-switch">off/on</label> -->
+  <hbll-model-viewer
+    src="../shared-assets/annotated_models/model.glb"
+    skybox_image="../shared-assets/annotated_models/sky_box.hdr"
+    annotation_src="../shared-assets/annotated_models/annotations.json"
+  ></hbll-model-viewer>
 </html>
