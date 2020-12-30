@@ -52,6 +52,7 @@ export default class HbllModelViewerElementBase extends LitElement {
   @property() edit: boolean | undefined = false;
   @property() lazy: boolean | undefined = false;
   @property() poster: string | undefined = undefined;
+  @property() folder: string | undefined = undefined;
 
   @internalProperty()
   cameraIsDirty: boolean;
@@ -130,21 +131,11 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   // This is a lit element function that is acalled when the element has finished an update.
-  updated(changedProperties) {
-    // This is to fix a wierd bug where when removing a annotation all following annotaions do not show up on the skull.
-    // The HTML exists for the annotations, yet they do not render. This is fixed by disabling all annotations then reshowing them.
-    // There might be a more elegant solution, however this works fine at the present.
-    if (this.second_updated) {
-      this.second_updated = false;
-      this.showAnnotations = true;
-    }
-  }
-
-  async firstUpdated() {
-    // Give the browser a chance to paint
-    await new Promise((r) => setTimeout(r, 0));
-
-    if (this.annotation_src != undefined) {
+  async updated(changedProperties) {
+    if (
+      this.annotation_src != undefined &&
+      changedProperties.has("annotation_src")
+    ) {
       this.annotations = await getJsonFromUrl(this.annotation_src);
       if (this.annotations != undefined) {
         this.annotation_list = this.annotations?.annotations;
@@ -162,15 +153,27 @@ export default class HbllModelViewerElementBase extends LitElement {
       }
     }
 
-    // if (this.manifest_src != undefined) {
-    //   this.manifest = await getJsonFromUrl(this.manifest_src);
-    //   if (this.manifest?.entries != undefined)
-    //     for (let i = 0; i < this.manifest?.entries.length || 0; i++) {
-    //       let text = await gettextFromFile(this.manifest?.entries[i].url);
-    //       if (text != undefined)
-    //         this.files.set(this.manifest?.entries[i].name, text);
-    //     }
-    // }
+    if (changedProperties.has("folder")) {
+      if (this.folder !== undefined) {
+        this.annotation_src = this.folder + "/annotations.json";
+        this.poster = this.folder + "/poster.png";
+        this.src = this.folder + "/model.glb";
+        this.skybox_image = this.folder + "/sky_box.hdr";
+      }
+    }
+    // This is to fix a wierd bug where when removing a annotation all following annotaions do not show up on the skull.
+    // The HTML exists for the annotations, yet they do not render. This is fixed by disabling all annotations then reshowing them.
+    // There might be a more elegant solution, however this works fine at the present.
+    if (this.second_updated) {
+      this.second_updated = false;
+      this.showAnnotations = true;
+    }
+  }
+
+  async firstUpdated() {
+    // Give the browser a chance to paint
+    await new Promise((r) => setTimeout(r, 0));
+
     this.addEventListener("drop", this.onDrop);
     this.addEventListener("dragover", this.onDragover);
 
@@ -613,10 +616,10 @@ export default class HbllModelViewerElementBase extends LitElement {
             : html``}
           <share-dialog
             @copy=${(e) => {
-              var link = `https://modelviewer.justbrenkman.com/viewer/embed/?model=${this.src}&image=${this.skybox_image}&poster=${this.poster}&lazy`;
+              var link = `https://modelviewer.justbrenkman.com/viewer/embed/?model=${this.src}&image=${this.skybox_image}&poster=${this.poster}&ann=${this.annotation_src}&lazy`;
               navigator.clipboard.writeText(
                 e.detail.embeded
-                  ? `<iframe src=${link} allowfullscreen></iframe>`
+                  ? `<iframe src="${link}" allowfullscreen=""frameborder="0" style="width: 100%; height: 100%"></iframe>`
                   : link
               );
             }}

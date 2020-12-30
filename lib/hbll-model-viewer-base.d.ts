@@ -15,6 +15,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     edit: boolean | undefined;
     lazy: boolean | undefined;
     poster: string | undefined;
+    folder: string | undefined;
     cameraIsDirty: boolean;
     currentAnnotation: Annotation | undefined;
     buttonStyles: any;
@@ -33,7 +34,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     light_model_from_env: boolean;
     loaded: boolean;
     constructor();
-    updated(changedProperties: any): void;
+    updated(changedProperties: any): Promise<void>;
     firstUpdated(): Promise<void>;
     private onDragover;
     private onDrop;

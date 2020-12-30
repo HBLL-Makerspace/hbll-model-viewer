@@ -19,6 +19,7 @@
       if (params.has("image")) image = params.get("image");
       if (params.has("ann")) ann = params.get("ann");
       if (params.has("poster")) poster = params.get("poster");
+      if (params.has("folder")) folder = params.get("folder");
       edit = params.has("edit");
       lazy = params.has("lazy");
 
@@ -37,6 +38,10 @@
           document
             .getElementById("model_viewer")
             .setAttribute("poster", poster);
+        if (params.has("folder"))
+          document
+            .getElementById("model_viewer")
+            .setAttribute("folder", folder);
         if (edit)
           document.getElementById("model_viewer").setAttribute("edit", "");
         if (lazy)
