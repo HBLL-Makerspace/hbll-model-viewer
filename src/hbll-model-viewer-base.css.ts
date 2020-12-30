@@ -337,4 +337,45 @@ export const styles: CSSResult = css`
       opacity: 0;
     }
   }
+
+  #lazy-load-poster {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+  }
+  #button-load {
+    background-color: #212121dd;
+    width: 80px;
+    height: 80px;
+    color: white;
+    cursor: pointer;
+    border-radius: 50%;
+    display: inline-block;
+    font-weight: 500;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.2), 0 0 4px rgba(0, 0, 0, 0.25);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    z-index: 100;
+  }
+  #button-load:after {
+    position: absolute;
+    top: calc(50% - 20px);
+    left: calc(50% - 11px);
+    display: block;
+    content: "";
+    box-sizing: border-box;
+    border-color: transparent transparent transparent rgb(255, 255, 255);
+    border-style: solid;
+    border-width: 20px 0px 20px 30px;
+  }
+  #button-load:hover {
+    background-color: #414141dd;
+  }
 `;

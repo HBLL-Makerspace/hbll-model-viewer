@@ -13,6 +13,8 @@ export default class HbllModelViewerElementBase extends LitElement {
     skybox_image: string | null;
     annotations: AnnotationData | null;
     edit: boolean | undefined;
+    lazy: boolean | undefined;
+    poster: string | undefined;
     cameraIsDirty: boolean;
     currentAnnotation: Annotation | undefined;
     buttonStyles: any;
@@ -29,6 +31,7 @@ export default class HbllModelViewerElementBase extends LitElement {
     downloading: boolean;
     show_background: boolean;
     light_model_from_env: boolean;
+    loaded: boolean;
     constructor();
     updated(changedProperties: any): void;
     firstUpdated(): Promise<void>;

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>HBLL 3D Model Viewer</title>
+    <meta name="description" content="Hbll Model Viewer Demo" />
+    <meta name="author" content="Ben Brenkman" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <link rel="stylesheet" href="../dist/bundle.css" />
+    <script type="module" src="../dist/hbll-model-viewer.min.js"></script>
+    <script>
+      const params = new URLSearchParams(document.location.search);
+      var model, image, ann, edit, lazy, poster;
+      if (params.has("model")) model = params.get("model");
+      if (params.has("image")) image = params.get("image");
+      if (params.has("ann")) ann = params.get("ann");
+      if (params.has("poster")) poster = params.get("poster");
+      edit = params.has("edit");
+      lazy = params.has("lazy");
+
+      window.onload = function () {
+        if (params.has("model"))
+          document.getElementById("model_viewer").setAttribute("src", model);
+        if (params.has("image"))
+          document
+            .getElementById("model_viewer")
+            .setAttribute("skybox_image", image);
+        if (params.has("ann"))
+          document
+            .getElementById("model_viewer")
+            .setAttribute("annotation_src", ann);
+        if (params.has("poster"))
+          document
+            .getElementById("model_viewer")
+            .setAttribute("poster", poster);
+        if (edit)
+          document.getElementById("model_viewer").setAttribute("edit", "");
+        if (lazy)
+          document.getElementById("model_viewer").setAttribute("lazy", "");
+      };
+    </script>
+  </head>
+
+  <!-- <hbll-model-viewer></hbll-model-viewer> -->
+
+  <hbll-model-viewer id="model_viewer"></hbll-model-viewer>
+</html>

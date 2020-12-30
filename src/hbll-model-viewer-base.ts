@@ -50,6 +50,8 @@ export default class HbllModelViewerElementBase extends LitElement {
   @property({ type: String }) skybox_image: string | null = null;
   @property() annotations: AnnotationData | null = { annotations: [] };
   @property() edit: boolean | undefined = false;
+  @property() lazy: boolean | undefined = false;
+  @property() poster: string | undefined = undefined;
 
   @internalProperty()
   cameraIsDirty: boolean;
@@ -98,6 +100,9 @@ export default class HbllModelViewerElementBase extends LitElement {
 
   @internalProperty()
   light_model_from_env: boolean = true;
+
+  @internalProperty()
+  loaded: boolean = false;
 
   constructor() {
     super();
@@ -454,131 +459,168 @@ export default class HbllModelViewerElementBase extends LitElement {
   }
 
   render() {
-    console.log("Edit: " + this.edit);
     return html`
       <a id="download"></a>
       <div id="container">
         <model-viewer
-          style=${map_style}
+          reveal="${this.lazy !== false && !this.loaded
+            ? "interaction"
+            : "auto"}"
           src=${this.src || ""}
           skybox-image=${this.show_background ? this.skybox_image || "" : null}
-          environment-image=${this.light_model_from_env ? null : white_image}
+          environment-image="${this.light_model_from_env ? null : white_image}"
           camera-controls
           @click="${this.handleClick},"
           @load=${(e) => {
             this.on_model_load(e);
           }}
         >
-          <style>
-            ${this.annotation_list?.map(
-              (i, index) => html` .annotation[slot="hotspot-${i.uid ||
-              "random"}"]
-              { background: ${i.fill_color || "#FFFFFFFF"}; }`
-            )};
-          </style>
+          ${this.lazy !== false && !this.loaded
+            ? html`<div
+                  id="lazy-load-poster"
+                  slot="poster"
+                  style="background-image: url('${this.poster}');"
+                ></div>
+                <div id="button-load" slot="poster"></div>`
+            : html``}
           ${this.render_dimensions(this.show_dimensions ? "" : "hide-enforce")}
-          ${this.showAnnotations
-            ? this.annotation_list?.map(
-                (i, index) =>
-                  html`<button
-                    class="annotation"
-                    id="hotspot-${i.uid || "rand"}"
+          ${this.loaded
+            ? html` <style>
+                  ${this.annotation_list?.map(
+                    (i, index) => html` .annotation[slot="hotspot-${i.uid ||
+                    "random"}"]
+                    { background: ${i.fill_color || "#FFFFFFFF"}; }`
+                  )};
+                </style>
+                ${this.showAnnotations
+                  ? this.annotation_list?.map(
+                      (i, index) =>
+                        html`<button
+                          class="annotation"
+                          id="hotspot-${i.uid || "rand"}"
+                          @click=${(e: Event) => {
+                            this.annotationClick(i);
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          slot="hotspot-${i.uid || "rand"}"
+                          data-position="${i.position.x} ${i.position.y} ${i
+                            .position.z}"
+                          data-normal="${i.normal.x} ${i.normal.y} ${i.normal
+                            .z}"
+                          data-visibility-attribute="visible"
+                        >
+                          ${index + 1}
+                          <div class="HotspotAnnotation">
+                            <div
+                              class="mdc-card mdc-theme--on-surface card-padded"
+                            >
+                              ${this.getAnnotationDescription(i)}
+                            </div>
+                          </div>
+                        </button>`
+                    )
+                  : html``}
+                ${!this.annotation_list?.length ? html`` : this.nav_label()}
+                ${this.src == undefined || this.src === ""
+                  ? this.no_model_msg()
+                  : html``}
+                <div class="fullscreen">
+                  ${this.edit !== false
+                    ? html`<button
+                        class="mdc-icon-button material-icons ${this.show_edit
+                          ? "mdc-theme--surface mdc-theme--secondary rounded"
+                          : ""}"
+                        @click=${(e: Event) => {
+                          this.show_edit = !this.show_edit;
+                          e.stopPropagation();
+                          e.preventDefault();
+                        }}
+                      >
+                        edit
+                      </button>`
+                    : html``}
+                  <button
+                    class="mdc-icon-button material-icons ${this.show_settings
+                      ? "mdc-theme--surface mdc-theme--secondary rounded"
+                      : ""}"
                     @click=${(e: Event) => {
-                      this.annotationClick(i);
+                      this.show_settings = !this.show_settings;
                       e.stopPropagation();
                       e.preventDefault();
                     }}
-                    slot="hotspot-${i.uid || "rand"}"
-                    data-position="${i.position.x} ${i.position.y} ${i.position
-                      .z}"
-                    data-normal="${i.normal.x} ${i.normal.y} ${i.normal.z}"
-                    data-visibility-attribute="visible"
                   >
-                    ${index + 1}
-                    <div class="HotspotAnnotation">
-                      <div class="mdc-card mdc-theme--on-surface card-padded">
-                        ${this.getAnnotationDescription(i)}
-                      </div>
-                    </div>
-                  </button>`
-              )
+                    settings
+                  </button>
+                  <button
+                    class="mdc-icon-button material-icons mdc-menu-surface--anchor"
+                    id="fullscreen_btn"
+                    @click=${(_) => {
+                      this.toggleFullscreen();
+                    }}
+                  >
+                    ${this.isFullscreen() ? "fullscreen_exit" : "fullscreen"}
+                  </button>
+                </div>
+                ${this.show_settings
+                  ? html`<settings-card
+                      @settings-update=${(e) => {
+                        this.show_dimensions = e.detail.settings.get(
+                          "showDimensions"
+                        );
+                        this.showAnnotations = e.detail.settings.get(
+                          "showAnnotations"
+                        );
+                        this.show_background = e.detail.settings.get(
+                          "showBackground"
+                        );
+                        this.light_model_from_env = e.detail.settings.get(
+                          "light_model_from_env"
+                        );
+                      }}
+                    ></settings-card>`
+                  : html``}
+                ${this.show_edit
+                  ? html`
+                      <edit-card
+                        @settings-update=${(e) => {}}
+                        .annotations="${this.annotation_list}"
+                        @edit-add-mode=${(e) => {
+                          this.add_annotation_mode = true;
+                          this.cameraIsDirty = false;
+                        }}
+                        @change-name=${(e) => {
+                          this.change_name(e.detail.name, e.detail.new_name);
+                        }}
+                        @change-index=${(e) => {
+                          this.change_index(
+                            e.detail.oldIndex,
+                            e.detail.newIndex
+                          );
+                        }}
+                        @download-request=${(e) => this.download_project()}
+                        @remove-annotation=${(e) =>
+                          this.remove_annotation(e.detail.index)}
+                        @change-annotation-color=${(e) =>
+                          this.change_annotation_color(
+                            e.detail.index,
+                            e.detail.color
+                          )}
+                        ?downloading="${this.downloading}"
+                      ></edit-card>
+                    `
+                  : html``}`
             : html``}
-          ${this.src == undefined && this.annotations == undefined
-            ? html``
-            : this.nav_label()}
-          ${this.src == undefined || this.src === ""
-            ? this.no_model_msg()
-            : html``}
-          <div class="fullscreen">
-            ${this.edit !== false
-              ? html`<button
-                  class="mdc-icon-button material-icons ${this.show_edit
-                    ? "mdc-theme--surface mdc-theme--secondary rounded"
-                    : ""}"
-                  @click=${(e: Event) => {
-                    this.show_edit = !this.show_edit;
-                    e.stopPropagation();
-                    e.preventDefault();
-                  }}
-                >
-                  edit
-                </button>`
-              : html``}
-            <button
-              class="mdc-icon-button material-icons ${this.show_settings
-                ? "mdc-theme--surface mdc-theme--secondary rounded"
-                : ""}"
-              @click=${(e: Event) => {
-                this.show_settings = !this.show_settings;
-                e.stopPropagation();
-                e.preventDefault();
-              }}
-            >
-              settings
-            </button>
-            <button
-              class="mdc-icon-button material-icons mdc-menu-surface--anchor"
-              id="fullscreen_btn"
-              @click=${(_) => {
-                this.toggleFullscreen();
-              }}
-            >
-              ${this.isFullscreen() ? "fullscreen_exit" : "fullscreen"}
-            </button>
-          </div>
-
-          <settings-card
-            class="${this.show_settings ? "" : "disapear"}"
-            @settings-update=${(e) => {
-              this.show_dimensions = e.detail.settings.get("showDimensions");
-              this.showAnnotations = e.detail.settings.get("showAnnotations");
-              this.show_background = e.detail.settings.get("showBackground");
-              this.light_model_from_env = e.detail.settings.get(
-                "light_model_from_env"
+          <share-dialog
+            @copy=${(e) => {
+              var link = `https://modelviewer.justbrenkman.com/viewer/embed/?model=${this.src}&image=${this.skybox_image}&poster=${this.poster}&lazy`;
+              navigator.clipboard.writeText(
+                e.detail.embeded
+                  ? `<iframe src=${link} allowfullscreen></iframe>`
+                  : link
               );
             }}
-          ></settings-card>
-
-          <edit-card
-            class="${this.show_edit ? "" : "disapear"}"
-            @settings-update=${(e) => {}}
-            .annotations="${this.annotation_list}"
-            @edit-add-mode=${(e) => {
-              this.add_annotation_mode = true;
-              this.cameraIsDirty = false;
-            }}
-            @change-name=${(e) => {
-              this.change_name(e.detail.name, e.detail.new_name);
-            }}
-            @change-index=${(e) => {
-              this.change_index(e.detail.oldIndex, e.detail.newIndex);
-            }}
-            @download-request=${(e) => this.download_project()}
-            @remove-annotation=${(e) => this.remove_annotation(e.detail.index)}
-            @change-annotation-color=${(e) =>
-              this.change_annotation_color(e.detail.index, e.detail.color)}
-            ?downloading="${this.downloading}"
-          ></edit-card>
+          ></share-dialog>
         </model-viewer>
       </div>
     `;
@@ -603,13 +645,18 @@ export default class HbllModelViewerElementBase extends LitElement {
     this.second_updated = true;
   }
 
+  // Downloads the project which includes the model, the annotations and other data.
   private async download_project() {
     this.downloading = true;
     var zip = JSZip();
+
+    // Get the model and zip it.
     const glTF = await this.modelViewer.exportScene();
     zip.file("model.glb", glTF);
     if (this.annotations != undefined)
       this.annotations.annotations = this.annotation_list;
+
+    // Add the annotations and all the supporting annotation files(they contain the data that is displayed)
     zip.file("annotations.json", JSON.stringify(this.annotations));
     this.annotations?.annotations.forEach((el) => {
       zip.file(
@@ -617,10 +664,19 @@ export default class HbllModelViewerElementBase extends LitElement {
         this.files.get(el.descriptionFileName || "null") || ""
       );
     });
+
+    // Add the sky_box if present.
     if (this.skybox_image != null) {
       zip.file("sky_box.hdr", (await fetch(this.skybox_image)).blob());
     }
 
+    // Generate the poster to use while loading model
+    zip.file(
+      "poster.png",
+      await this.modelViewer.toBlob({ idealAspect: true })
+    );
+
+    // Generate the raw data to download and download.
     var blob = await zip.generateAsync({ type: "blob" });
     var url = window.URL.createObjectURL(blob);
     this.downloader.href = url;
@@ -722,6 +778,8 @@ export default class HbllModelViewerElementBase extends LitElement {
       name: "hotspot-dot-X-Y+Z",
       position: `${center.x - x2} ${center.y - y2} ${center.z + z2}`,
     });
+
+    this.loaded = true;
   }
 
   private render_dimensions(insert: string) {
