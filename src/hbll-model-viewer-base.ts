@@ -485,6 +485,8 @@ export default class HbllModelViewerElementBase extends LitElement {
                   style="background-image: url('${this.poster}');"
                 ></div>
                 <div id="button-load" slot="poster"></div>`
+            : !this.loaded
+            ? this.no_model_msg()
             : html``}
           ${this.render_dimensions(this.show_dimensions ? "" : "hide-enforce")}
           ${this.loaded
@@ -525,9 +527,7 @@ export default class HbllModelViewerElementBase extends LitElement {
                     )
                   : html``}
                 ${!this.annotation_list?.length ? html`` : this.nav_label()}
-                ${this.src == undefined || this.src === ""
-                  ? this.no_model_msg()
-                  : html``}
+
                 <div class="fullscreen">
                   ${this.edit !== false
                     ? html`<button
