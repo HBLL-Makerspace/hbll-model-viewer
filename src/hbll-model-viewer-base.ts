@@ -616,7 +616,10 @@ export default class HbllModelViewerElementBase extends LitElement {
             : html``}
           <share-dialog
             @copy=${(e) => {
-              var link = `https://modelviewer.justbrenkman.com/viewer/embed/?model=${this.src}&image=${this.skybox_image}&poster=${this.poster}&ann=${this.annotation_src}&lazy`;
+              var link =
+                this.folder !== undefined
+                  ? `https://modelviewer.justbrenkman.com/viewer/embed/?folder=${this.folder}&lazy`
+                  : `https://modelviewer.justbrenkman.com/viewer/embed/?model=${this.src}&image=${this.skybox_image}&poster=${this.poster}&ann=${this.annotation_src}&lazy`;
               navigator.clipboard.writeText(
                 e.detail.embeded
                   ? `<iframe src="${link}" allowfullscreen=""frameborder="0" style="width: 100%; height: 100%"></iframe>`
