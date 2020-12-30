@@ -8,11 +8,15 @@
     <meta name="description" content="Hbll Model Viewer Demo" />
     <meta name="author" content="Ben Brenkman" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" href="./favicon.ico" />
 
     <link rel="stylesheet" href="../dist/bundle.css" />
-    <script type="module" src="../dist/hbll-model-viewer.min.js"></script>
     <script>
+      window.addEventListener("load", (e) => {
+        document.getElementById("spinner").remove();
+        document.getElementById("model_viewer").removeAttribute("style");
+      });
+
       const params = new URLSearchParams(document.location.search);
       var model, image, ann, edit, lazy, poster;
       if (params.has("model")) model = params.get("model");
@@ -48,9 +52,29 @@
           document.getElementById("model_viewer").setAttribute("lazy", "");
       };
     </script>
+    <script type="module" src="../dist/hbll-model-viewer.min.js"></script>
   </head>
 
   <!-- <hbll-model-viewer></hbll-model-viewer> -->
+  <body>
+    <div class="lds-spinner" id="spinner">
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
 
-  <hbll-model-viewer id="model_viewer"></hbll-model-viewer>
+    <hbll-model-viewer
+      id="model_viewer"
+      style="display: none"
+    ></hbll-model-viewer>
+  </body>
 </html>
